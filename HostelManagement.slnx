@@ -1,0 +1,7 @@
+<Solution>
+  <Project Path="hostelmanagement.client/hostelmanagement.client.esproj">
+    <Build />
+    <Deploy />
+  </Project>
+  <Project Path="HostelManagement.Server/HostelManagement.Server.csproj" />
+</Solution>
