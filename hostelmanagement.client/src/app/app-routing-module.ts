@@ -9,7 +9,7 @@ import { ResidentsComponent } from './residents/residents.component';
 import { ExpensesComponent } from './expenses/expenses.component';
 
 const routes: Routes = [
-  { path: '', pathMatch: 'full', redirectTo: 'login' },
+  { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
   { path: 'login', component: LoginComponent },
   { path: 'setup', component: SetupComponent },
   { path: 'dashboard', component: DashboardComponent, canActivate: [authGuard] },
