@@ -1,0 +1,16 @@
+{
+  "name": "e2e",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "pretest": "npm --prefix ../hostelmanagement.client run build && node -e \"require('fs').cpSync('../hostelmanagement.client/dist/hostelmanagement.client/browser','../HostelManagement.Server/wwwroot',{recursive:true})\"",
+    "test": "playwright test"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@playwright/test": "^1.65.0"
+  }
+}

@@ -1,0 +1,73 @@
+<div class="expenses-shell">
+  <h1>Expenses</h1>
+
+  <ul>
+    @for (hostel of hostels(); track hostel.id) {
+      <li>
+        <button type="button" (click)="selectHostel(hostel)">{{ hostel.name }}</button>
+      </li>
+    }
+  </ul>
+
+  @if (selectedHostel()) {
+    <section>
+      <h2>{{ selectedHostel()!.name }}</h2>
+
+      <form (ngSubmit)="createExpense()">
+        <label>
+          Category
+          <select name="newCategory" [(ngModel)]="newCategory" required>
+            <option value="Electricity">Electricity</option>
+            <option value="Wifi">Wifi</option>
+            <option value="Maintenance">Maintenance</option>
+            <option value="Staff">Staff</option>
+            <option value="Other">Other</option>
+          </select>
+        </label>
+        <label>
+          Amount
+          <input type="number" name="newAmount" [(ngModel)]="newAmount" required />
+        </label>
+        <label>
+          Date
+          <input type="date" name="newDate" [(ngModel)]="newDate" required />
+        </label>
+        <label>
+          Notes
+          <input type="text" name="newNotes" [(ngModel)]="newNotes" />
+        </label>
+        <button type="submit">Add expense</button>
+      </form>
+
+      <h3>Category breakdown</h3>
+      <form (ngSubmit)="loadBreakdown()">
+        <label>
+          From
+          <input type="date" name="rangeFrom" [(ngModel)]="rangeFrom" required />
+        </label>
+        <label>
+          To
+          <input type="date" name="rangeTo" [(ngModel)]="rangeTo" required />
+        </label>
+        <button type="submit">View breakdown</button>
+      </form>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Category</th>
+            <th>Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (entry of breakdown(); track entry.category) {
+            <tr>
+              <td>{{ entry.category }}</td>
+              <td>{{ entry.total }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </section>
+  }
+</div>

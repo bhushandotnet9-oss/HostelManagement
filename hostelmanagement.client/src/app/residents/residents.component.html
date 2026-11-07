@@ -1,0 +1,156 @@
+<div class="residents-shell">
+  <h1>Residents</h1>
+
+  <form (ngSubmit)="createResident()">
+    <label>
+      Name
+      <input type="text" name="newName" [(ngModel)]="newName" required />
+    </label>
+    <label>
+      Contact number
+      <input type="text" name="newContactNumber" [(ngModel)]="newContactNumber" required />
+    </label>
+    <label>
+      Aadhaar number
+      <input type="text" name="newAadhaarNumber" [(ngModel)]="newAadhaarNumber" required />
+    </label>
+    <label>
+      Move-in date
+      <input type="date" name="newMoveInDate" [(ngModel)]="newMoveInDate" required />
+    </label>
+    <button type="submit">Add resident</button>
+  </form>
+
+  <ul>
+    @for (resident of residents(); track resident.id) {
+      <li class="resident">
+        <strong>{{ resident.name }}</strong> - {{ resident.status }}
+        @if (resident.cotId) {
+          <span> | Rent: {{ resident.rentAmount }} | Billing: {{ resident.billingCycle }}</span>
+        }
+        @if (resident.noticeDate) {
+          <span> | Notice: {{ resident.noticeDate }} ({{ resident.noticePeriodDays }} days)</span>
+        }
+        @if (resident.checkoutDate) {
+          <span> | Checked out: {{ resident.checkoutDate }}, refund {{ resident.depositRefundAmount }}</span>
+        }
+
+        @if (!resident.cotId && resident.status !== 'CheckedOut') {
+          <form (ngSubmit)="assignCot(resident)">
+            <label>
+              Cot
+              <select name="cot-{{ resident.id }}" [(ngModel)]="assignCotId[resident.id]" required>
+                <option *ngFor="let option of vacantCots()" [value]="option.cotId">{{ option.label }}</option>
+              </select>
+            </label>
+            <label>
+              Rent amount
+              <input type="number" name="rent-{{ resident.id }}" [(ngModel)]="assignRentAmount[resident.id]" required />
+            </label>
+            <label>
+              Deposit amount
+              <input
+                type="number"
+                name="deposit-{{ resident.id }}"
+                [(ngModel)]="assignDepositAmount[resident.id]"
+                required
+              />
+            </label>
+            <label>
+              Billing cycle
+              <select name="billing-{{ resident.id }}" [(ngModel)]="assignBillingCycle[resident.id]" required>
+                <option value="Monthly">Monthly</option>
+                <option value="Quarterly">Quarterly</option>
+                <option value="HalfYearly">Half-Yearly</option>
+                <option value="Yearly">Yearly</option>
+              </select>
+            </label>
+            <label>
+              Move-in date
+              <input type="date" name="moveIn-{{ resident.id }}" [(ngModel)]="assignMoveInDate[resident.id]" required />
+            </label>
+            <button type="submit">Assign cot</button>
+          </form>
+        }
+
+        @if (resident.cotId && resident.status === 'Active') {
+          <form (ngSubmit)="recordNotice(resident)">
+            <label>
+              Notice date
+              <input type="date" name="noticeDate-{{ resident.id }}" [(ngModel)]="noticeDate[resident.id]" required />
+            </label>
+            <label>
+              Notice period (days)
+              <input
+                type="number"
+                name="noticePeriod-{{ resident.id }}"
+                [(ngModel)]="noticePeriodDays[resident.id]"
+                required
+              />
+            </label>
+            <button type="submit">Record notice</button>
+          </form>
+        }
+
+        @if (resident.status === 'ServingNotice') {
+          <form (ngSubmit)="checkout(resident)">
+            <label>
+              Deposit refund amount
+              <input
+                type="number"
+                name="refund-{{ resident.id }}"
+                [(ngModel)]="checkoutDepositRefund[resident.id]"
+                required
+              />
+            </label>
+            <button type="submit">Complete checkout</button>
+          </form>
+        }
+
+        @if (resident.cotId) {
+          <div class="dues">
+            <button type="button" (click)="loadDues(resident)">View dues</button>
+            @if (duesByResident()[resident.id]) {
+              <table>
+                <thead>
+                  <tr>
+                    <th>Due date</th>
+                    <th>Rent</th>
+                    <th>Paid</th>
+                    <th>Status</th>
+                    <th>Log payment</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (due of duesByResident()[resident.id]; track due.id) {
+                    <tr>
+                      <td>{{ due.dueDate }}</td>
+                      <td>{{ due.rentAmount }}</td>
+                      <td>{{ due.amountPaid }}</td>
+                      <td>{{ due.isPaid ? 'Paid' : due.isOverdue ? 'Overdue' : 'Unpaid' }}</td>
+                      <td>
+                        @if (!due.isPaid) {
+                          <form (ngSubmit)="logPayment(resident, due)">
+                            <input
+                              type="number"
+                              name="amount-{{ due.id }}"
+                              [(ngModel)]="paymentAmount[due.id]"
+                              placeholder="Amount"
+                              required
+                            />
+                            <input type="date" name="date-{{ due.id }}" [(ngModel)]="paymentDate[due.id]" required />
+                            <button type="submit">Log payment</button>
+                          </form>
+                        }
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            }
+          </div>
+        }
+      </li>
+    }
+  </ul>
+</div>

@@ -4,4 +4,5 @@
     <Deploy />
   </Project>
   <Project Path="HostelManagement.Server/HostelManagement.Server.csproj" />
+  <Project Path="HostelManagement.Server.Tests/HostelManagement.Server.Tests.csproj" />
 </Solution>

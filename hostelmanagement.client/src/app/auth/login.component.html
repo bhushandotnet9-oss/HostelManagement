@@ -1,0 +1,18 @@
+<div class="auth-form">
+  <h1>Owner Login</h1>
+  <form (ngSubmit)="submit()">
+    <label>
+      Email
+      <input type="email" name="email" [(ngModel)]="email" required />
+    </label>
+    <label>
+      Password
+      <input type="password" name="password" [(ngModel)]="password" required />
+    </label>
+    <button type="submit">Log in</button>
+  </form>
+  @if (error()) {
+    <p class="error">{{ error() }}</p>
+  }
+  <p><a routerLink="/setup">New owner? Set up your org</a></p>
+</div>

@@ -1,0 +1,22 @@
+<div class="auth-form">
+  <h1>Set Up Your Hostel Org</h1>
+  <form (ngSubmit)="submit()">
+    <label>
+      Organization Name
+      <input type="text" name="orgName" [(ngModel)]="orgName" required />
+    </label>
+    <label>
+      Email
+      <input type="email" name="email" [(ngModel)]="email" required />
+    </label>
+    <label>
+      Password
+      <input type="password" name="password" [(ngModel)]="password" required />
+    </label>
+    <button type="submit">Create account</button>
+  </form>
+  @if (error()) {
+    <p class="error">{{ error() }}</p>
+  }
+  <p><a routerLink="/login">Already have an account? Log in</a></p>
+</div>

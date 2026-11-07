@@ -1,0 +1,62 @@
+<div class="hostels-shell">
+  <h1>Hostels</h1>
+
+  <form (ngSubmit)="createHostel()">
+    <label>
+      Name
+      <input type="text" name="newHostelName" [(ngModel)]="newHostelName" required />
+    </label>
+    <label>
+      Location
+      <input type="text" name="newHostelLocation" [(ngModel)]="newHostelLocation" required />
+    </label>
+    <button type="submit">Add hostel</button>
+  </form>
+
+  <ul>
+    @for (hostel of hostels(); track hostel.id) {
+      <li>
+        <button type="button" (click)="selectHostel(hostel)">{{ hostel.name }} - {{ hostel.location }}</button>
+      </li>
+    }
+  </ul>
+
+  @if (selectedHostel()) {
+    <section>
+      <h2>{{ selectedHostel()!.name }}</h2>
+
+      @if (occupancy()) {
+        <p>
+          Total cots: {{ occupancy()!.total }} | Occupied: {{ occupancy()!.occupied }} | Vacant:
+          {{ occupancy()!.vacant }}
+        </p>
+      }
+
+      <form (ngSubmit)="createRoom()">
+        <label>
+          Room name
+          <input type="text" name="newRoomName" [(ngModel)]="newRoomName" required />
+        </label>
+        <button type="submit">Add room</button>
+      </form>
+
+      @for (room of rooms(); track room.id) {
+        <div class="room">
+          <h3>{{ room.name }}</h3>
+          <ul>
+            @for (cot of cotsByRoom()[room.id]; track cot.id) {
+              <li>{{ cot.label }} - {{ cot.status }}</li>
+            }
+          </ul>
+          <form (ngSubmit)="createCot(room)">
+            <label>
+              Cot label
+              <input type="text" name="newCotLabel-{{ room.id }}" [(ngModel)]="newCotLabelByRoom[room.id]" required />
+            </label>
+            <button type="submit">Add cot</button>
+          </form>
+        </div>
+      }
+    </section>
+  }
+</div>
