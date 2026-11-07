@@ -1,141 +1,145 @@
-<div class="dashboard-shell">
-  <h1>Welcome, {{ email() }}</h1>
-  <nav>
-    <a routerLink="/hostels">Manage hostels</a>
-    <a routerLink="/residents">Manage residents</a>
-    <a routerLink="/expenses">Manage expenses</a>
-  </nav>
-  <button type="button" (click)="logout()">Log out</button>
+<div class="container py-4">
+  <h1 class="mb-4">Welcome, {{ email() }}</h1>
 
-  <section>
-    <h2>Overdue residents</h2>
-    <table>
-      <thead>
-        <tr>
-          <th>Resident</th>
-          <th>Hostel</th>
-          <th>Cot</th>
-          <th>Amount owed</th>
-          <th>Days overdue</th>
-        </tr>
-      </thead>
-      <tbody>
-        @for (entry of overdue(); track entry.residentId) {
+  <section class="card mb-4">
+    <div class="card-body">
+      <h2 class="card-title h5">Overdue residents</h2>
+      <table class="table table-striped table-hover">
+        <thead>
           <tr>
-            <td>{{ entry.residentName }}</td>
-            <td>{{ entry.hostelName }}</td>
-            <td>{{ entry.cotLabel }}</td>
-            <td>{{ entry.amountOwed }}</td>
-            <td>{{ entry.daysOverdue }}</td>
+            <th>Resident</th>
+            <th>Hostel</th>
+            <th>Cot</th>
+            <th>Amount owed</th>
+            <th>Days overdue</th>
           </tr>
-        }
-      </tbody>
-    </table>
+        </thead>
+        <tbody>
+          @for (entry of overdue(); track entry.residentId) {
+            <tr>
+              <td>{{ entry.residentName }}</td>
+              <td>{{ entry.hostelName }}</td>
+              <td>{{ entry.cotLabel }}</td>
+              <td>{{ entry.amountOwed }}</td>
+              <td>{{ entry.daysOverdue }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
   </section>
 
-  <section>
-    <h2>Upcoming dues (next 7 days)</h2>
-    <table>
-      <thead>
-        <tr>
-          <th>Resident</th>
-          <th>Hostel</th>
-          <th>Due date</th>
-          <th>Amount due</th>
-        </tr>
-      </thead>
-      <tbody>
-        @for (entry of upcomingDues(); track entry.residentId) {
+  <section class="card mb-4">
+    <div class="card-body">
+      <h2 class="card-title h5">Upcoming dues (next 7 days)</h2>
+      <table class="table table-striped table-hover">
+        <thead>
           <tr>
-            <td>{{ entry.residentName }}</td>
-            <td>{{ entry.hostelName }}</td>
-            <td>{{ entry.dueDate }}</td>
-            <td>{{ entry.amountDue }}</td>
+            <th>Resident</th>
+            <th>Hostel</th>
+            <th>Due date</th>
+            <th>Amount due</th>
           </tr>
-        }
-      </tbody>
-    </table>
+        </thead>
+        <tbody>
+          @for (entry of upcomingDues(); track entry.residentId) {
+            <tr>
+              <td>{{ entry.residentName }}</td>
+              <td>{{ entry.hostelName }}</td>
+              <td>{{ entry.dueDate }}</td>
+              <td>{{ entry.amountDue }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
   </section>
 
-  <section>
-    <h2>Occupancy</h2>
-    @if (occupancy()) {
-      <table>
+  <section class="card mb-4">
+    <div class="card-body">
+      <h2 class="card-title h5">Occupancy</h2>
+      @if (occupancy()) {
+        <table class="table table-striped table-hover">
+          <thead>
+            <tr>
+              <th>Hostel</th>
+              <th>Total</th>
+              <th>Occupied</th>
+              <th>Vacant</th>
+              <th>Occupancy %</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (entry of occupancy()!.perHostel; track entry.hostelId) {
+              <tr>
+                <td>{{ entry.hostelName }}</td>
+                <td>{{ entry.total }}</td>
+                <td>{{ entry.occupied }}</td>
+                <td>{{ entry.vacant }}</td>
+                <td>{{ entry.occupancyPercent }}%</td>
+              </tr>
+            }
+            <tr>
+              <td><strong>Combined</strong></td>
+              <td>{{ occupancy()!.combined.total }}</td>
+              <td>{{ occupancy()!.combined.occupied }}</td>
+              <td>{{ occupancy()!.combined.vacant }}</td>
+              <td>{{ occupancy()!.combined.occupancyPercent }}%</td>
+            </tr>
+          </tbody>
+        </table>
+      }
+    </div>
+  </section>
+
+  <section class="card mb-4">
+    <div class="card-body">
+      <h2 class="card-title h5">Revenue this month (expected vs collected)</h2>
+      <table class="table table-striped table-hover">
         <thead>
           <tr>
             <th>Hostel</th>
-            <th>Total</th>
-            <th>Occupied</th>
-            <th>Vacant</th>
-            <th>Occupancy %</th>
+            <th>Expected</th>
+            <th>Collected</th>
           </tr>
         </thead>
         <tbody>
-          @for (entry of occupancy()!.perHostel; track entry.hostelId) {
-            <tr>
-              <td>{{ entry.hostelName }}</td>
-              <td>{{ entry.total }}</td>
-              <td>{{ entry.occupied }}</td>
-              <td>{{ entry.vacant }}</td>
-              <td>{{ entry.occupancyPercent }}%</td>
-            </tr>
-          }
-          <tr>
-            <td><strong>Combined</strong></td>
-            <td>{{ occupancy()!.combined.total }}</td>
-            <td>{{ occupancy()!.combined.occupied }}</td>
-            <td>{{ occupancy()!.combined.vacant }}</td>
-            <td>{{ occupancy()!.combined.occupancyPercent }}%</td>
-          </tr>
-        </tbody>
-      </table>
-    }
-  </section>
-
-  <section>
-    <h2>Revenue this month (expected vs collected)</h2>
-    <table>
-      <thead>
-        <tr>
-          <th>Hostel</th>
-          <th>Expected</th>
-          <th>Collected</th>
-        </tr>
-      </thead>
-      <tbody>
-        @for (hostel of occupancy()?.perHostel; track hostel.hostelId) {
-          @if (revenueByHostel()[hostel.hostelId!]) {
-            <tr>
-              <td>{{ hostel.hostelName }}</td>
-              <td>{{ revenueByHostel()[hostel.hostelId!].expected }}</td>
-              <td>{{ revenueByHostel()[hostel.hostelId!].collected }}</td>
-            </tr>
-          }
-        }
-      </tbody>
-    </table>
-  </section>
-
-  <section>
-    <h2>Expenses this month by category</h2>
-    @for (hostelTotals of expenseTotals(); track hostelTotals.hostelId) {
-      <h3>{{ hostelTotals.hostelName }}</h3>
-      <table>
-        <thead>
-          <tr>
-            <th>Category</th>
-            <th>Total</th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (entry of hostelTotals.totals; track entry.category) {
-            <tr>
-              <td>{{ entry.category }}</td>
-              <td>{{ entry.total }}</td>
-            </tr>
+          @for (hostel of occupancy()?.perHostel; track hostel.hostelId) {
+            @if (revenueByHostel()[hostel.hostelId!]) {
+              <tr>
+                <td>{{ hostel.hostelName }}</td>
+                <td>{{ revenueByHostel()[hostel.hostelId!].expected }}</td>
+                <td>{{ revenueByHostel()[hostel.hostelId!].collected }}</td>
+              </tr>
+            }
           }
         </tbody>
       </table>
-    }
+    </div>
+  </section>
+
+  <section class="card mb-4">
+    <div class="card-body">
+      <h2 class="card-title h5">Expenses this month by category</h2>
+      @for (hostelTotals of expenseTotals(); track hostelTotals.hostelId) {
+        <h3 class="h6">{{ hostelTotals.hostelName }}</h3>
+        <table class="table table-striped table-hover">
+          <thead>
+            <tr>
+              <th>Category</th>
+              <th>Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (entry of hostelTotals.totals; track entry.category) {
+              <tr>
+                <td>{{ entry.category }}</td>
+                <td>{{ entry.total }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      }
+    </div>
   </section>
 </div>

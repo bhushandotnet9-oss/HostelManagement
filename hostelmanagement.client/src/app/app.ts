@@ -1,4 +1,5 @@
 import { Component, signal } from '@angular/core';
+import { AuthService } from './auth/auth.service';
 
 @Component({
   selector: 'app-root',
@@ -8,4 +9,6 @@ import { Component, signal } from '@angular/core';
 })
 export class App {
   protected readonly title = signal('hostelmanagement.client');
+
+  constructor(readonly auth: AuthService) {}
 }

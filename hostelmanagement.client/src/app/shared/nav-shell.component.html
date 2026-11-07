@@ -1,0 +1,33 @@
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-3">
+  <div class="container-fluid">
+    <a class="navbar-brand" routerLink="/dashboard">Hostel Management</a>
+    <button
+      class="navbar-toggler"
+      type="button"
+      data-bs-toggle="collapse"
+      data-bs-target="#navShellCollapse"
+      aria-controls="navShellCollapse"
+      aria-expanded="false"
+      aria-label="Navigation menu"
+    >
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navShellCollapse">
+      <ul class="navbar-nav me-auto">
+        <li class="nav-item">
+          <a class="nav-link" routerLink="/dashboard" routerLinkActive="active">Dashboard</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" routerLink="/hostels" routerLinkActive="active">Hostels</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" routerLink="/residents" routerLinkActive="active">Residents</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" routerLink="/expenses" routerLinkActive="active">Expenses</a>
+        </li>
+      </ul>
+      <button type="button" class="btn btn-outline-light" (click)="logout()">Log out</button>
+    </div>
+  </div>
+</nav>

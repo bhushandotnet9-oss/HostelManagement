@@ -11,6 +11,8 @@ import { DashboardComponent } from './dashboard/dashboard.component';
 import { HostelsComponent } from './hostels/hostels.component';
 import { ResidentsComponent } from './residents/residents.component';
 import { ExpensesComponent } from './expenses/expenses.component';
+import { NavShellComponent } from './shared/nav-shell.component';
+import { ToastContainerComponent } from './shared/toast-container.component';
 
 @NgModule({
   declarations: [
@@ -21,6 +23,8 @@ import { ExpensesComponent } from './expenses/expenses.component';
     HostelsComponent,
     ResidentsComponent,
     ExpensesComponent,
+    NavShellComponent,
+    ToastContainerComponent,
   ],
   imports: [
     BrowserModule, HttpClientModule,

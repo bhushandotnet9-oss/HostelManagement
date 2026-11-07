@@ -1,5 +1,6 @@
 import { Component, OnInit, signal } from '@angular/core';
 import { Hostel, HostelService } from '../hostels/hostel.service';
+import { ToastService } from '../shared/toast.service';
 import { ExpenseCategory, ExpenseCategoryTotal, ExpenseService } from './expense.service';
 
 @Component({
@@ -23,6 +24,7 @@ export class ExpensesComponent implements OnInit {
   constructor(
     private readonly hostelService: HostelService,
     private readonly expenseService: ExpenseService,
+    private readonly toast: ToastService,
   ) {}
 
   ngOnInit(): void {
@@ -39,13 +41,17 @@ export class ExpensesComponent implements OnInit {
     if (!hostel || this.newAmount <= 0 || !this.newDate) {
       return;
     }
-    this.expenseService.create(hostel.id, this.newCategory, this.newAmount, this.newDate, this.newNotes).subscribe(() => {
-      this.newAmount = 0;
-      this.newDate = '';
-      this.newNotes = '';
-      if (this.rangeFrom && this.rangeTo) {
-        this.loadBreakdown();
-      }
+    this.expenseService.create(hostel.id, this.newCategory, this.newAmount, this.newDate, this.newNotes).subscribe({
+      next: () => {
+        this.newAmount = 0;
+        this.newDate = '';
+        this.newNotes = '';
+        if (this.rangeFrom && this.rangeTo) {
+          this.loadBreakdown();
+        }
+        this.toast.success('Expense recorded successfully.');
+      },
+      error: () => this.toast.error('Failed to record expense.'),
     });
   }
 

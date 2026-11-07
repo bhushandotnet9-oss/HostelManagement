@@ -29,6 +29,6 @@ test('invalid login credentials are rejected', async ({ page }) => {
   await page.getByLabel('Password').fill('WrongPassword');
   await page.getByRole('button', { name: 'Log in' }).click();
 
-  await expect(page.locator('.error')).toHaveText('Invalid email or password.');
+  await expect(page.locator('.toast')).toHaveText('Invalid email or password.');
   await expect(page).toHaveURL(/\/login$/);
 });

@@ -1,5 +1,6 @@
 import { Component, OnInit, signal } from '@angular/core';
 import { HostelService } from '../hostels/hostel.service';
+import { ToastService } from '../shared/toast.service';
 import { DuePeriod, DueService } from './due.service';
 import { BillingCycle, Resident, ResidentService } from './resident.service';
 
@@ -41,6 +42,7 @@ export class ResidentsComponent implements OnInit {
     private readonly residentService: ResidentService,
     private readonly hostelService: HostelService,
     private readonly dueService: DueService,
+    private readonly toast: ToastService,
   ) {}
 
   ngOnInit(): void {
@@ -97,12 +99,16 @@ export class ResidentsComponent implements OnInit {
     }
     this.residentService
       .create(this.newName, this.newContactNumber, this.newAadhaarNumber, this.newMoveInDate)
-      .subscribe(() => {
-        this.newName = '';
-        this.newContactNumber = '';
-        this.newAadhaarNumber = '';
-        this.newMoveInDate = '';
-        this.reloadResidents();
+      .subscribe({
+        next: () => {
+          this.newName = '';
+          this.newContactNumber = '';
+          this.newAadhaarNumber = '';
+          this.newMoveInDate = '';
+          this.reloadResidents();
+          this.toast.success('Resident added successfully.');
+        },
+        error: () => this.toast.error('Failed to add resident.'),
       });
   }
 
@@ -122,9 +128,13 @@ export class ResidentsComponent implements OnInit {
         billingCycle,
         moveInDate,
       )
-      .subscribe(() => {
-        this.reloadResidents();
-        this.reloadVacantCots();
+      .subscribe({
+        next: () => {
+          this.reloadResidents();
+          this.reloadVacantCots();
+          this.toast.success('Cot assigned successfully.');
+        },
+        error: () => this.toast.error('Failed to assign cot.'),
       });
   }
 
@@ -134,14 +144,24 @@ export class ResidentsComponent implements OnInit {
     if (!noticeDate || !noticePeriodDays) {
       return;
     }
-    this.residentService.recordNotice(resident.id, noticeDate, noticePeriodDays).subscribe(() => this.reloadResidents());
+    this.residentService.recordNotice(resident.id, noticeDate, noticePeriodDays).subscribe({
+      next: () => {
+        this.reloadResidents();
+        this.toast.success('Notice recorded successfully.');
+      },
+      error: () => this.toast.error('Failed to record notice.'),
+    });
   }
 
   checkout(resident: Resident): void {
     const depositRefundAmount = this.checkoutDepositRefund[resident.id] ?? 0;
-    this.residentService.checkout(resident.id, depositRefundAmount).subscribe(() => {
-      this.reloadResidents();
-      this.reloadVacantCots();
+    this.residentService.checkout(resident.id, depositRefundAmount).subscribe({
+      next: () => {
+        this.reloadResidents();
+        this.reloadVacantCots();
+        this.toast.success('Checkout completed successfully.');
+      },
+      error: () => this.toast.error('Failed to complete checkout.'),
     });
   }
 
@@ -157,10 +177,14 @@ export class ResidentsComponent implements OnInit {
     if (!amount || !date) {
       return;
     }
-    this.dueService.logPayment(duePeriod.id, amount, date).subscribe(() => {
-      this.paymentAmount[duePeriod.id] = 0;
-      this.paymentDate[duePeriod.id] = '';
-      this.loadDues(resident);
+    this.dueService.logPayment(duePeriod.id, amount, date).subscribe({
+      next: () => {
+        this.paymentAmount[duePeriod.id] = 0;
+        this.paymentDate[duePeriod.id] = '';
+        this.loadDues(resident);
+        this.toast.success('Payment logged successfully.');
+      },
+      error: () => this.toast.error('Failed to log payment.'),
     });
   }
 }

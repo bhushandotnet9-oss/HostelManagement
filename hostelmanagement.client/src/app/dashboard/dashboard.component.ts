@@ -1,5 +1,4 @@
 import { Component, OnInit, signal } from '@angular/core';
-import { Router } from '@angular/router';
 import { AuthService } from '../auth/auth.service';
 import { Hostel, HostelService, RevenueSummary } from '../hostels/hostel.service';
 import {
@@ -26,7 +25,6 @@ export class DashboardComponent implements OnInit {
 
   constructor(
     private readonly auth: AuthService,
-    private readonly router: Router,
     private readonly dashboardService: DashboardService,
     private readonly hostelService: HostelService,
   ) {
@@ -57,8 +55,4 @@ export class DashboardComponent implements OnInit {
     return { from, to };
   }
 
-  logout(): void {
-    this.auth.logout();
-    this.router.navigateByUrl('/login');
-  }
 }

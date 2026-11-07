@@ -1,4 +1,5 @@
 import { Component, OnInit, signal } from '@angular/core';
+import { ToastService } from '../shared/toast.service';
 import { Cot, Hostel, HostelOccupancy, HostelService, Room } from './hostel.service';
 
 @Component({
@@ -18,7 +19,10 @@ export class HostelsComponent implements OnInit {
   newRoomName = '';
   newCotLabelByRoom: Record<string, string> = {};
 
-  constructor(private readonly hostelService: HostelService) {}
+  constructor(
+    private readonly hostelService: HostelService,
+    private readonly toast: ToastService,
+  ) {}
 
   ngOnInit(): void {
     this.reloadHostels();
@@ -32,10 +36,14 @@ export class HostelsComponent implements OnInit {
     if (!this.newHostelName.trim() || !this.newHostelLocation.trim()) {
       return;
     }
-    this.hostelService.createHostel(this.newHostelName, this.newHostelLocation).subscribe(() => {
-      this.newHostelName = '';
-      this.newHostelLocation = '';
-      this.reloadHostels();
+    this.hostelService.createHostel(this.newHostelName, this.newHostelLocation).subscribe({
+      next: () => {
+        this.newHostelName = '';
+        this.newHostelLocation = '';
+        this.reloadHostels();
+        this.toast.success('Hostel added successfully.');
+      },
+      error: () => this.toast.error('Failed to add hostel.'),
     });
   }
 
@@ -69,9 +77,13 @@ export class HostelsComponent implements OnInit {
     if (!hostel || !this.newRoomName.trim()) {
       return;
     }
-    this.hostelService.createRoom(hostel.id, this.newRoomName).subscribe(() => {
-      this.newRoomName = '';
-      this.loadRooms(hostel.id);
+    this.hostelService.createRoom(hostel.id, this.newRoomName).subscribe({
+      next: () => {
+        this.newRoomName = '';
+        this.loadRooms(hostel.id);
+        this.toast.success('Room added successfully.');
+      },
+      error: () => this.toast.error('Failed to add room.'),
     });
   }
 
@@ -80,13 +92,17 @@ export class HostelsComponent implements OnInit {
     if (!label?.trim()) {
       return;
     }
-    this.hostelService.createCot(room.id, label).subscribe(() => {
-      this.newCotLabelByRoom[room.id] = '';
-      this.loadCots(room.id);
-      const hostel = this.selectedHostel();
-      if (hostel) {
-        this.loadOccupancy(hostel.id);
-      }
+    this.hostelService.createCot(room.id, label).subscribe({
+      next: () => {
+        this.newCotLabelByRoom[room.id] = '';
+        this.loadCots(room.id);
+        const hostel = this.selectedHostel();
+        if (hostel) {
+          this.loadOccupancy(hostel.id);
+        }
+        this.toast.success('Cot added successfully.');
+      },
+      error: () => this.toast.error('Failed to add cot.'),
     });
   }
 }

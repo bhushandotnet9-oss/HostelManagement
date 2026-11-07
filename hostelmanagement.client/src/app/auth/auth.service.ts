@@ -1,5 +1,5 @@
 import { HttpClient } from '@angular/common/http';
-import { Injectable, signal } from '@angular/core';
+import { computed, Injectable, signal } from '@angular/core';
 import { Observable, tap } from 'rxjs';
 
 export interface AuthResponse {
@@ -14,6 +14,7 @@ const EMAIL_KEY = 'hostelmanagement.email';
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   readonly currentEmail = signal<string | null>(localStorage.getItem(EMAIL_KEY));
+  readonly isAuthenticated = computed(() => this.currentEmail() !== null);
 
   constructor(private readonly http: HttpClient) {}
 
@@ -37,10 +38,6 @@ export class AuthService {
 
   get token(): string | null {
     return localStorage.getItem(TOKEN_KEY);
-  }
-
-  isAuthenticated(): boolean {
-    return this.token !== null;
   }
 
   private storeSession(response: AuthResponse): void {

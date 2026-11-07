@@ -1,62 +1,107 @@
-<div class="hostels-shell">
-  <h1>Hostels</h1>
+<div class="container py-4">
+  <h1 class="mb-4">Hostels</h1>
 
-  <form (ngSubmit)="createHostel()">
-    <label>
-      Name
-      <input type="text" name="newHostelName" [(ngModel)]="newHostelName" required />
-    </label>
-    <label>
-      Location
-      <input type="text" name="newHostelLocation" [(ngModel)]="newHostelLocation" required />
-    </label>
-    <button type="submit">Add hostel</button>
-  </form>
+  <div class="card mb-4">
+    <div class="card-body">
+      <h2 class="card-title h5">Add hostel</h2>
+      <form (ngSubmit)="createHostel()" class="row g-2 align-items-end">
+        <div class="col-auto">
+          <label class="form-label" for="new-hostel-name">Name</label>
+          <input
+            type="text"
+            id="new-hostel-name"
+            class="form-control"
+            name="newHostelName"
+            [(ngModel)]="newHostelName"
+            required
+          />
+        </div>
+        <div class="col-auto">
+          <label class="form-label" for="new-hostel-location">Location</label>
+          <input
+            type="text"
+            id="new-hostel-location"
+            class="form-control"
+            name="newHostelLocation"
+            [(ngModel)]="newHostelLocation"
+            required
+          />
+        </div>
+        <div class="col-auto">
+          <button type="submit" class="btn btn-primary">Add hostel</button>
+        </div>
+      </form>
+    </div>
+  </div>
 
-  <ul>
+  <ul class="list-group mb-4">
     @for (hostel of hostels(); track hostel.id) {
-      <li>
-        <button type="button" (click)="selectHostel(hostel)">{{ hostel.name }} - {{ hostel.location }}</button>
+      <li class="list-group-item">
+        <button type="button" class="btn btn-link p-0" (click)="selectHostel(hostel)">
+          {{ hostel.name }} - {{ hostel.location }}
+        </button>
       </li>
     }
   </ul>
 
   @if (selectedHostel()) {
-    <section>
-      <h2>{{ selectedHostel()!.name }}</h2>
+    <div class="card">
+      <div class="card-body">
+        <h2 class="card-title h5">{{ selectedHostel()!.name }}</h2>
 
-      @if (occupancy()) {
-        <p>
-          Total cots: {{ occupancy()!.total }} | Occupied: {{ occupancy()!.occupied }} | Vacant:
-          {{ occupancy()!.vacant }}
-        </p>
-      }
+        @if (occupancy()) {
+          <p>
+            Total cots: {{ occupancy()!.total }} | Occupied: {{ occupancy()!.occupied }} | Vacant:
+            {{ occupancy()!.vacant }}
+          </p>
+        }
 
-      <form (ngSubmit)="createRoom()">
-        <label>
-          Room name
-          <input type="text" name="newRoomName" [(ngModel)]="newRoomName" required />
-        </label>
-        <button type="submit">Add room</button>
-      </form>
+        <form (ngSubmit)="createRoom()" class="row g-2 align-items-end mb-3">
+          <div class="col-auto">
+            <label class="form-label" for="new-room-name">Room name</label>
+            <input
+              type="text"
+              id="new-room-name"
+              class="form-control"
+              name="newRoomName"
+              [(ngModel)]="newRoomName"
+              required
+            />
+          </div>
+          <div class="col-auto">
+            <button type="submit" class="btn btn-primary">Add room</button>
+          </div>
+        </form>
 
-      @for (room of rooms(); track room.id) {
-        <div class="room">
-          <h3>{{ room.name }}</h3>
-          <ul>
-            @for (cot of cotsByRoom()[room.id]; track cot.id) {
-              <li>{{ cot.label }} - {{ cot.status }}</li>
-            }
-          </ul>
-          <form (ngSubmit)="createCot(room)">
-            <label>
-              Cot label
-              <input type="text" name="newCotLabel-{{ room.id }}" [(ngModel)]="newCotLabelByRoom[room.id]" required />
-            </label>
-            <button type="submit">Add cot</button>
-          </form>
-        </div>
-      }
-    </section>
+        @for (room of rooms(); track room.id) {
+          <div class="card mb-3">
+            <div class="card-body">
+              <h3 class="card-title h6">{{ room.name }}</h3>
+              <ul class="list-group mb-3">
+                @for (cot of cotsByRoom()[room.id]; track cot.id) {
+                  <li class="list-group-item">{{ cot.label }} - {{ cot.status }}</li>
+                }
+              </ul>
+              <form (ngSubmit)="createCot(room)" class="row g-2 align-items-end">
+                <div class="col-auto">
+                  <label class="form-label" for="new-cot-label-{{ room.id }}">Cot label</label>
+                  <input
+                    type="text"
+                    id="new-cot-label-{{ room.id }}"
+                    class="form-control"
+                    name="newCotLabel-{{ room.id }}"
+                    [(ngModel)]="newCotLabelByRoom[room.id]"
+                    required
+                  />
+                </div>
+                <div class="col-auto">
+                  <button type="submit" class="btn btn-primary">Add cot</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
   }
 </div>
