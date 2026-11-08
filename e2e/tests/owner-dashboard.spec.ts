@@ -64,7 +64,9 @@ test('owner dashboard shows correct aggregates across both hostels', async ({ pa
   await page.getByLabel('From').fill(`${currentMonth}-01`);
   await page.getByLabel('To').fill(`${currentMonth}-28`);
   await page.getByRole('button', { name: 'View breakdown' }).click();
-  await expect(page.locator('tbody tr', { hasText: 'Electricity' })).toContainText('900');
+  // Scoped to the breakdown card: the entries table above also lists this expense.
+  const breakdownCard = page.locator('.card', { has: page.getByRole('heading', { name: 'Category breakdown' }) });
+  await expect(breakdownCard.locator('tbody tr', { hasText: 'Electricity' })).toContainText('900');
 
   await page.goto('/dashboard');
 

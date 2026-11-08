@@ -62,6 +62,61 @@ public class HostelsController : ControllerBase
         return CreatedAtAction(nameof(Get), new { id = hostel.Id }, new HostelResponse(hostel.Id, hostel.Name, hostel.Location));
     }
 
+    [HttpPut("{id:guid}")]
+    public async Task<ActionResult<HostelResponse>> Update(Guid id, UpdateHostelRequest request)
+    {
+        if (string.IsNullOrWhiteSpace(request.Name) || string.IsNullOrWhiteSpace(request.Location))
+        {
+            return BadRequest("Name and Location are required.");
+        }
+
+        // The tenant query filter means another org's hostel is simply not here,
+        // so this is a 404 rather than a 403 - same as the Get above.
+        var hostel = await _db.Hostels.SingleOrDefaultAsync(h => h.Id == id);
+        if (hostel is null)
+        {
+            return NotFound();
+        }
+
+        hostel.Name = request.Name;
+        hostel.Location = request.Location;
+        await _db.SaveChangesAsync();
+
+        return Ok(new HostelResponse(hostel.Id, hostel.Name, hostel.Location));
+    }
+
+    [HttpDelete("{id:guid}")]
+    public async Task<IActionResult> Delete(Guid id)
+    {
+        var hostel = await _db.Hostels.SingleOrDefaultAsync(h => h.Id == id);
+        if (hostel is null)
+        {
+            return NotFound();
+        }
+
+        // Guarded hard delete: refuse while anything still references the hostel
+        // rather than cascading rooms, cots, residents and expenses away with it.
+        if (await _db.Rooms.AnyAsync(r => r.HostelId == id))
+        {
+            return Conflict("This hostel still has rooms. Delete them first.");
+        }
+
+        if (await _db.Residents.AnyAsync(r => r.HostelId == id))
+        {
+            return Conflict("This hostel still has residents. Delete them first.");
+        }
+
+        if (await _db.Expenses.AnyAsync(e => e.HostelId == id))
+        {
+            return Conflict("This hostel still has expenses. Delete them first.");
+        }
+
+        _db.Hostels.Remove(hostel);
+        await _db.SaveChangesAsync();
+
+        return NoContent();
+    }
+
     [HttpGet("{id:guid}/occupancy")]
     public async Task<ActionResult<HostelOccupancyResponse>> Occupancy(Guid id)
     {

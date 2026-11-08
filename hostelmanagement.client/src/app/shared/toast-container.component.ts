@@ -1,34 +1,21 @@
-import { AfterViewChecked, Component, ElementRef, QueryList, ViewChildren } from '@angular/core';
+import { Component } from '@angular/core';
 import { ToastService } from './toast.service';
 
-declare const bootstrap: any;
-
+/**
+ * Renders live toasts directly, rather than handing each element to Bootstrap's
+ * Toast widget after render. The widget approach depended on a ViewChildren
+ * query being populated in the same change-detection pass that created the
+ * element: it held for success toasts (whose handlers trigger further state
+ * changes and so further passes) but not for error toasts, which rendered their
+ * text and then never received the `.show` class that makes a `.toast` visible.
+ * Angular owns the classes here, so visibility no longer depends on that timing.
+ * Auto-dismiss lives in ToastService.
+ */
 @Component({
   selector: 'app-toast-container',
   standalone: false,
   templateUrl: './toast-container.component.html',
 })
-export class ToastContainerComponent implements AfterViewChecked {
-  @ViewChildren('toastEl') private readonly toastEls!: QueryList<ElementRef<HTMLElement>>;
-  private readonly shown = new Set<number>();
-
+export class ToastContainerComponent {
   constructor(readonly toastService: ToastService) {}
-
-  ngAfterViewChecked(): void {
-    this.toastEls.forEach((ref) => {
-      const el = ref.nativeElement;
-      const id = Number(el.dataset['toastId']);
-      if (this.shown.has(id)) {
-        return;
-      }
-      this.shown.add(id);
-
-      const toast = new bootstrap.Toast(el, { autohide: true });
-      el.addEventListener('hidden.bs.toast', () => {
-        this.shown.delete(id);
-        this.toastService.dismiss(id);
-      });
-      toast.show();
-    });
-  }
 }

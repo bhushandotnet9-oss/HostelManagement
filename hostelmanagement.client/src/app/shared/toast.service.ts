@@ -10,6 +10,9 @@ export interface ToastEntry {
 
 @Injectable({ providedIn: 'root' })
 export class ToastService {
+  /** Matches Bootstrap's own default autohide delay. */
+  static readonly autohideMs = 5000;
+
   private nextId = 0;
   readonly toasts = signal<ToastEntry[]>([]);
 
@@ -28,5 +31,6 @@ export class ToastService {
   private push(kind: ToastKind, message: string): void {
     const entry: ToastEntry = { id: this.nextId++, kind, message };
     this.toasts.update((entries) => [...entries, entry]);
+    setTimeout(() => this.dismiss(entry.id), ToastService.autohideMs);
   }
 }

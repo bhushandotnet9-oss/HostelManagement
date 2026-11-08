@@ -65,6 +65,59 @@ public class ExpensesController : ControllerBase
             new ExpenseResponse(expense.Id, expense.HostelId, expense.Category, expense.Amount, expense.Date, expense.Notes));
     }
 
+    // The :guid constraint is what keeps the "breakdown" literal route below from
+    // being captured here as an id.
+    [HttpGet("{id:guid}")]
+    public async Task<ActionResult<ExpenseResponse>> Get(Guid hostelId, Guid id)
+    {
+        var expense = await _db.Expenses.SingleOrDefaultAsync(e => e.Id == id && e.HostelId == hostelId);
+        if (expense is null)
+        {
+            return NotFound();
+        }
+
+        return Ok(new ExpenseResponse(expense.Id, expense.HostelId, expense.Category, expense.Amount, expense.Date, expense.Notes));
+    }
+
+    [HttpPut("{id:guid}")]
+    public async Task<ActionResult<ExpenseResponse>> Update(Guid hostelId, Guid id, UpdateExpenseRequest request)
+    {
+        if (request.Amount <= 0)
+        {
+            return BadRequest("Amount must be positive.");
+        }
+
+        var expense = await _db.Expenses.SingleOrDefaultAsync(e => e.Id == id && e.HostelId == hostelId);
+        if (expense is null)
+        {
+            return NotFound();
+        }
+
+        expense.Category = request.Category;
+        expense.Amount = request.Amount;
+        expense.Date = request.Date;
+        expense.Notes = request.Notes;
+        await _db.SaveChangesAsync();
+
+        return Ok(new ExpenseResponse(expense.Id, expense.HostelId, expense.Category, expense.Amount, expense.Date, expense.Notes));
+    }
+
+    [HttpDelete("{id:guid}")]
+    public async Task<IActionResult> Delete(Guid hostelId, Guid id)
+    {
+        var expense = await _db.Expenses.SingleOrDefaultAsync(e => e.Id == id && e.HostelId == hostelId);
+        if (expense is null)
+        {
+            return NotFound();
+        }
+
+        // Nothing references an expense, so there is no guard to apply here.
+        _db.Expenses.Remove(expense);
+        await _db.SaveChangesAsync();
+
+        return NoContent();
+    }
+
     [HttpGet("breakdown")]
     public async Task<ActionResult<List<ExpenseCategoryTotal>>> Breakdown(Guid hostelId, DateOnly from, DateOnly to)
     {

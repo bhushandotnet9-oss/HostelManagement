@@ -60,4 +60,46 @@ public class RoomsController : ControllerBase
 
         return CreatedAtAction(nameof(List), new { hostelId }, new RoomResponse(room.Id, room.HostelId, room.Name));
     }
+
+    [HttpPut("{id:guid}")]
+    public async Task<ActionResult<RoomResponse>> Update(Guid hostelId, Guid id, UpdateRoomRequest request)
+    {
+        if (string.IsNullOrWhiteSpace(request.Name))
+        {
+            return BadRequest("Name is required.");
+        }
+
+        // Matching the parent id here keeps a room addressed through the wrong
+        // hostel a 404 rather than a silent cross-hostel edit.
+        var room = await _db.Rooms.SingleOrDefaultAsync(r => r.Id == id && r.HostelId == hostelId);
+        if (room is null)
+        {
+            return NotFound();
+        }
+
+        room.Name = request.Name;
+        await _db.SaveChangesAsync();
+
+        return Ok(new RoomResponse(room.Id, room.HostelId, room.Name));
+    }
+
+    [HttpDelete("{id:guid}")]
+    public async Task<IActionResult> Delete(Guid hostelId, Guid id)
+    {
+        var room = await _db.Rooms.SingleOrDefaultAsync(r => r.Id == id && r.HostelId == hostelId);
+        if (room is null)
+        {
+            return NotFound();
+        }
+
+        if (await _db.Cots.AnyAsync(c => c.RoomId == id))
+        {
+            return Conflict("This room still has cots. Delete them first.");
+        }
+
+        _db.Rooms.Remove(room);
+        await _db.SaveChangesAsync();
+
+        return NoContent();
+    }
 }

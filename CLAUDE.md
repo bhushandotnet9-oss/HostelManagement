@@ -52,6 +52,12 @@ JWT bearer auth (`Auth/TokenService.cs`, `Auth/JwtOptions.cs`), configured in `P
 ### API surface
 Controllers under `Controllers/` map closely to domain areas: `AccountController`, `HostelsController`, `RoomsController`, `CotsController`, `ResidentsController`, `DuesController`, `ExpensesController`, `DashboardController`. Request/response shapes live in `Controllers/Dtos`. `GET /api/health` is an unauthenticated liveness check mapped directly in `Program.cs`.
 
+The five owner-facing resources (hostels, rooms, cots, residents, expenses) expose update (`PUT`) and delete (`DELETE`) alongside read and create. Two conventions hold across all of them:
+- **Deletes are guarded, not cascading.** A record with dependents is refused with `409 Conflict` and a message naming the blocker (a hostel with rooms/residents/expenses, a room with cots, an `Occupied` cot, a resident with recorded payments). The one exception is deleting a resident, which also removes their derived `DuePeriod` rows and returns their cot to `Vacant` — payments are what block it, not dues, since merely reading a resident's dues materializes them.
+- **Another org's record is `404`, not `403`.** The tenant query filter means the controller genuinely cannot see the row, so cross-tenant requests are indistinguishable from missing ones by design.
+
+Resident updates cover KYC and assignment terms only; `Status`, `CotId`, notice, and checkout fields change solely through the existing lifecycle actions. The move-in date is frozen with a `409` once any `DuePeriod` exists, because it anchors the whole billing schedule (see `Billing/DueDateCalculator`).
+
 ### Static file serving
 `wwwroot` is populated by directly copying the Angular `dist/.../browser` build output (see `e2e/package.json`'s `pretest`), not through the SpaProxy/esproj manifest pipeline. Because of this, `Program.cs` uses `UseStaticFiles()` rather than `MapStaticAssets()` — the latter expects a build manifest that isn't present here and would otherwise serve `.js` files with an empty content type.
 

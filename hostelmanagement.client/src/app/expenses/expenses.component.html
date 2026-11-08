@@ -61,6 +61,102 @@
 
       <div class="card mb-4">
         <div class="card-body">
+          <h3 class="card-title h6">Expense entries</h3>
+          <table class="table table-striped table-hover">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Category</th>
+                <th>Amount</th>
+                <th>Notes</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (expense of expenses(); track expense.id) {
+                <tr class="expense-row">
+                  @if (editingExpenseId() === expense.id) {
+                    <td colspan="5">
+                      <form (ngSubmit)="saveExpense(expense)" class="row g-2 align-items-end">
+                        <div class="col-auto">
+                          <label class="form-label" for="edit-expense-date-{{ expense.id }}">Date</label>
+                          <input
+                            type="date"
+                            id="edit-expense-date-{{ expense.id }}"
+                            class="form-control"
+                            name="editDate"
+                            [(ngModel)]="editDate"
+                            required
+                          />
+                        </div>
+                        <div class="col-auto">
+                          <label class="form-label" for="edit-expense-category-{{ expense.id }}">Category</label>
+                          <select
+                            id="edit-expense-category-{{ expense.id }}"
+                            class="form-select"
+                            name="editCategory"
+                            [(ngModel)]="editCategory"
+                            required
+                          >
+                            <option value="Electricity">Electricity</option>
+                            <option value="Wifi">Wifi</option>
+                            <option value="Maintenance">Maintenance</option>
+                            <option value="Staff">Staff</option>
+                            <option value="Other">Other</option>
+                          </select>
+                        </div>
+                        <div class="col-auto">
+                          <label class="form-label" for="edit-expense-amount-{{ expense.id }}">Amount</label>
+                          <input
+                            type="number"
+                            id="edit-expense-amount-{{ expense.id }}"
+                            class="form-control"
+                            name="editAmount"
+                            [(ngModel)]="editAmount"
+                            required
+                          />
+                        </div>
+                        <div class="col-auto">
+                          <label class="form-label" for="edit-expense-notes-{{ expense.id }}">Notes</label>
+                          <input
+                            type="text"
+                            id="edit-expense-notes-{{ expense.id }}"
+                            class="form-control"
+                            name="editNotes"
+                            [(ngModel)]="editNotes"
+                          />
+                        </div>
+                        <div class="col-auto">
+                          <button type="submit" class="btn btn-primary">Save</button>
+                          <button type="button" class="btn btn-secondary ms-2" (click)="cancelEditExpense()">
+                            Cancel
+                          </button>
+                        </div>
+                      </form>
+                    </td>
+                  } @else {
+                    <td>{{ expense.date }}</td>
+                    <td>{{ expense.category }}</td>
+                    <td>{{ expense.amount }}</td>
+                    <td>{{ expense.notes }}</td>
+                    <td>
+                      <button type="button" class="btn btn-sm btn-outline-secondary" (click)="startEditExpense(expense)">
+                        Edit
+                      </button>
+                      <button type="button" class="btn btn-sm btn-outline-danger ms-2" (click)="deleteExpense(expense)">
+                        Delete
+                      </button>
+                    </td>
+                  }
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card mb-4">
+        <div class="card-body">
           <h3 class="card-title h6">Category breakdown</h3>
           <form (ngSubmit)="loadBreakdown()" class="row g-2 align-items-end mb-3">
             <div class="col-auto">

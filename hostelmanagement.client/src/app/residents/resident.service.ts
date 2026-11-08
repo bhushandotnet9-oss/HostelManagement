@@ -34,6 +34,33 @@ export class ResidentService {
     return this.http.post<Resident>('/api/residents', { name, contactNumber, aadhaarNumber, moveInDate });
   }
 
+  /**
+   * Terms (rent, deposit, billing cycle) are optional: the server rejects them
+   * for a resident with no assigned cot, so a plain KYC correction omits them.
+   */
+  update(
+    residentId: string,
+    name: string,
+    contactNumber: string,
+    aadhaarNumber: string,
+    moveInDate: string,
+    terms?: { rentAmount: number; depositAmount: number; billingCycle: BillingCycle },
+  ): Observable<Resident> {
+    return this.http.put<Resident>(`/api/residents/${residentId}`, {
+      name,
+      contactNumber,
+      aadhaarNumber,
+      moveInDate,
+      rentAmount: terms?.rentAmount ?? null,
+      depositAmount: terms?.depositAmount ?? null,
+      billingCycle: terms?.billingCycle ?? null,
+    });
+  }
+
+  remove(residentId: string): Observable<void> {
+    return this.http.delete<void>(`/api/residents/${residentId}`);
+  }
+
   assignCot(
     residentId: string,
     cotId: string,

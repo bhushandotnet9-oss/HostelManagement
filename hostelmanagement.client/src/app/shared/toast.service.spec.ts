@@ -35,4 +35,18 @@ describe('ToastService', () => {
 
     expect(service.toasts().length).toBe(0);
   });
+
+  it('auto-dismisses an entry after the autohide delay', () => {
+    jest.useFakeTimers();
+    try {
+      service.error('Failed');
+      expect(service.toasts().length).toBe(1);
+
+      jest.advanceTimersByTime(ToastService.autohideMs);
+
+      expect(service.toasts().length).toBe(0);
+    } finally {
+      jest.useRealTimers();
+    }
+  });
 });

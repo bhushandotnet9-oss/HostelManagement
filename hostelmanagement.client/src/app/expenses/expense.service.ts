@@ -26,6 +26,30 @@ export class ExpenseService {
     return this.http.post<Expense>(`/api/hostels/${hostelId}/expenses`, { category, amount, date, notes });
   }
 
+  list(hostelId: string): Observable<Expense[]> {
+    return this.http.get<Expense[]>(`/api/hostels/${hostelId}/expenses`);
+  }
+
+  update(
+    hostelId: string,
+    expenseId: string,
+    category: ExpenseCategory,
+    amount: number,
+    date: string,
+    notes: string,
+  ): Observable<Expense> {
+    return this.http.put<Expense>(`/api/hostels/${hostelId}/expenses/${expenseId}`, {
+      category,
+      amount,
+      date,
+      notes,
+    });
+  }
+
+  remove(hostelId: string, expenseId: string): Observable<void> {
+    return this.http.delete<void>(`/api/hostels/${hostelId}/expenses/${expenseId}`);
+  }
+
   breakdown(hostelId: string, from: string, to: string): Observable<ExpenseCategoryTotal[]> {
     return this.http.get<ExpenseCategoryTotal[]>(
       `/api/hostels/${hostelId}/expenses/breakdown?from=${from}&to=${to}`,

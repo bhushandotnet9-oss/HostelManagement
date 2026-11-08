@@ -53,17 +53,127 @@
   @for (resident of residents(); track resident.id) {
     <li class="resident card mb-3">
       <div class="card-body">
-        <h3 class="card-title h5">
-          {{ resident.name }}
-          <span
-            class="badge"
-            [class.text-bg-success]="resident.status === 'Active'"
-            [class.text-bg-warning]="resident.status === 'ServingNotice'"
-            [class.text-bg-secondary]="resident.status === 'CheckedOut'"
-          >
-            {{ resident.status }}
+        <div class="d-flex justify-content-between align-items-start">
+          <h3 class="card-title h5">
+            {{ resident.name }}
+            <span
+              class="badge"
+              [class.text-bg-success]="resident.status === 'Active'"
+              [class.text-bg-warning]="resident.status === 'ServingNotice'"
+              [class.text-bg-secondary]="resident.status === 'CheckedOut'"
+            >
+              {{ resident.status }}
+            </span>
+          </h3>
+          <span>
+            <button type="button" class="btn btn-sm btn-outline-secondary" (click)="startEditResident(resident)">
+              Edit
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-danger ms-2" (click)="deleteResident(resident)">
+              Delete
+            </button>
           </span>
-        </h3>
+        </div>
+
+        @if (editingResidentId() === resident.id) {
+          <form (ngSubmit)="saveResident(resident)" class="row g-2 align-items-end mt-2">
+            <div class="col-auto">
+              <label class="form-label" for="edit-name-{{ resident.id }}">Name</label>
+              <input
+                type="text"
+                id="edit-name-{{ resident.id }}"
+                class="form-control"
+                name="editName"
+                [(ngModel)]="editName"
+                required
+              />
+            </div>
+            <div class="col-auto">
+              <label class="form-label" for="edit-contact-{{ resident.id }}">Contact number</label>
+              <input
+                type="text"
+                id="edit-contact-{{ resident.id }}"
+                class="form-control"
+                name="editContactNumber"
+                [(ngModel)]="editContactNumber"
+                required
+              />
+            </div>
+            <div class="col-auto">
+              <label class="form-label" for="edit-aadhaar-{{ resident.id }}">Aadhaar number</label>
+              <input
+                type="text"
+                id="edit-aadhaar-{{ resident.id }}"
+                class="form-control"
+                name="editAadhaarNumber"
+                [(ngModel)]="editAadhaarNumber"
+                required
+              />
+            </div>
+            <div class="col-auto">
+              <label class="form-label" for="edit-move-in-{{ resident.id }}">Move-in date</label>
+              <input
+                type="date"
+                id="edit-move-in-{{ resident.id }}"
+                class="form-control"
+                name="editMoveInDate"
+                [(ngModel)]="editMoveInDate"
+                required
+              />
+            </div>
+
+            @if (editHasCot) {
+              <div class="col-12">
+                <p class="form-text mb-1">
+                  Changes to rent, deposit, and billing cycle apply to future billing. Dues already generated keep their
+                  original amounts.
+                </p>
+              </div>
+              <div class="col-auto">
+                <label class="form-label" for="edit-rent-{{ resident.id }}">Rent amount</label>
+                <input
+                  type="number"
+                  id="edit-rent-{{ resident.id }}"
+                  class="form-control"
+                  name="editRentAmount"
+                  [(ngModel)]="editRentAmount"
+                  required
+                />
+              </div>
+              <div class="col-auto">
+                <label class="form-label" for="edit-deposit-{{ resident.id }}">Deposit amount</label>
+                <input
+                  type="number"
+                  id="edit-deposit-{{ resident.id }}"
+                  class="form-control"
+                  name="editDepositAmount"
+                  [(ngModel)]="editDepositAmount"
+                  required
+                />
+              </div>
+              <div class="col-auto">
+                <label class="form-label" for="edit-billing-{{ resident.id }}">Billing cycle</label>
+                <select
+                  id="edit-billing-{{ resident.id }}"
+                  class="form-select"
+                  name="editBillingCycle"
+                  [(ngModel)]="editBillingCycle"
+                  required
+                >
+                  <option value="Monthly">Monthly</option>
+                  <option value="Quarterly">Quarterly</option>
+                  <option value="HalfYearly">Half-Yearly</option>
+                  <option value="Yearly">Yearly</option>
+                </select>
+              </div>
+            }
+
+            <div class="col-auto">
+              <button type="submit" class="btn btn-primary">Save</button>
+              <button type="button" class="btn btn-secondary ms-2" (click)="cancelEditResident()">Cancel</button>
+            </div>
+          </form>
+        }
         @if (resident.cotId) {
           <p class="mb-1">Rent: {{ resident.rentAmount }} | Billing: {{ resident.billingCycle }}</p>
         }

@@ -1,5 +1,6 @@
 import { Component, OnInit, signal } from '@angular/core';
 import { HostelService } from '../hostels/hostel.service';
+import { apiErrorMessage } from '../shared/api-error';
 import { ToastService } from '../shared/toast.service';
 import { DuePeriod, DueService } from './due.service';
 import { BillingCycle, Resident, ResidentService } from './resident.service';
@@ -33,6 +34,18 @@ export class ResidentsComponent implements OnInit {
   noticePeriodDays: Record<string, number> = {};
 
   checkoutDepositRefund: Record<string, number> = {};
+
+  readonly editingResidentId = signal<string | null>(null);
+  editName = '';
+  editContactNumber = '';
+  editAadhaarNumber = '';
+  editMoveInDate = '';
+  editRentAmount = 0;
+  editDepositAmount = 0;
+  editBillingCycle: BillingCycle = 'Monthly';
+  // Mirrors resident.cotId at the time editing started: terms are only editable
+  // for an assigned resident, and the server rejects them otherwise.
+  editHasCot = false;
 
   readonly duesByResident = signal<Record<string, DuePeriod[]>>({});
   paymentAmount: Record<string, number> = {};
@@ -162,6 +175,61 @@ export class ResidentsComponent implements OnInit {
         this.toast.success('Checkout completed successfully.');
       },
       error: () => this.toast.error('Failed to complete checkout.'),
+    });
+  }
+
+  startEditResident(resident: Resident): void {
+    this.editingResidentId.set(resident.id);
+    this.editName = resident.name;
+    this.editContactNumber = resident.contactNumber;
+    this.editAadhaarNumber = resident.aadhaarNumber;
+    this.editMoveInDate = resident.moveInDate;
+    this.editHasCot = !!resident.cotId;
+    this.editRentAmount = resident.rentAmount;
+    this.editDepositAmount = resident.depositAmount;
+    this.editBillingCycle = resident.billingCycle ?? 'Monthly';
+  }
+
+  cancelEditResident(): void {
+    this.editingResidentId.set(null);
+  }
+
+  saveResident(resident: Resident): void {
+    if (!this.editName.trim() || !this.editContactNumber.trim() || !this.editAadhaarNumber.trim() || !this.editMoveInDate) {
+      return;
+    }
+    const terms = this.editHasCot
+      ? {
+          rentAmount: this.editRentAmount,
+          depositAmount: this.editDepositAmount,
+          billingCycle: this.editBillingCycle,
+        }
+      : undefined;
+    this.residentService
+      .update(resident.id, this.editName, this.editContactNumber, this.editAadhaarNumber, this.editMoveInDate, terms)
+      .subscribe({
+        next: () => {
+          this.editingResidentId.set(null);
+          this.reloadResidents();
+          this.toast.success('Resident updated successfully.');
+        },
+        // Surfaces the server's reason - notably the 409 when the move-in date
+        // can no longer change because billing has started.
+        error: (error) => this.toast.error(apiErrorMessage(error, 'Failed to update resident.')),
+      });
+  }
+
+  deleteResident(resident: Resident): void {
+    if (!confirm(`Delete resident "${resident.name}"? This cannot be undone.`)) {
+      return;
+    }
+    this.residentService.remove(resident.id).subscribe({
+      next: () => {
+        this.reloadResidents();
+        this.reloadVacantCots();
+        this.toast.success('Resident deleted successfully.');
+      },
+      error: (error) => this.toast.error(apiErrorMessage(error, 'Failed to delete resident.')),
     });
   }
 

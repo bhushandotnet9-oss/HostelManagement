@@ -37,9 +37,50 @@
   <ul class="list-group mb-4">
     @for (hostel of hostels(); track hostel.id) {
       <li class="list-group-item">
-        <button type="button" class="btn btn-link p-0" (click)="selectHostel(hostel)">
-          {{ hostel.name }} - {{ hostel.location }}
-        </button>
+        @if (editingHostelId() === hostel.id) {
+          <form (ngSubmit)="saveHostel(hostel)" class="row g-2 align-items-end">
+            <div class="col-auto">
+              <label class="form-label" for="edit-hostel-name-{{ hostel.id }}">Name</label>
+              <input
+                type="text"
+                id="edit-hostel-name-{{ hostel.id }}"
+                class="form-control"
+                name="editHostelName"
+                [(ngModel)]="editHostelName"
+                required
+              />
+            </div>
+            <div class="col-auto">
+              <label class="form-label" for="edit-hostel-location-{{ hostel.id }}">Location</label>
+              <input
+                type="text"
+                id="edit-hostel-location-{{ hostel.id }}"
+                class="form-control"
+                name="editHostelLocation"
+                [(ngModel)]="editHostelLocation"
+                required
+              />
+            </div>
+            <div class="col-auto">
+              <button type="submit" class="btn btn-primary">Save</button>
+              <button type="button" class="btn btn-secondary ms-2" (click)="cancelEditHostel()">Cancel</button>
+            </div>
+          </form>
+        } @else {
+          <div class="d-flex justify-content-between align-items-center">
+            <button type="button" class="btn btn-link p-0" (click)="selectHostel(hostel)">
+              {{ hostel.name }} - {{ hostel.location }}
+            </button>
+            <span>
+              <button type="button" class="btn btn-sm btn-outline-secondary" (click)="startEditHostel(hostel)">
+                Edit
+              </button>
+              <button type="button" class="btn btn-sm btn-outline-danger ms-2" (click)="deleteHostel(hostel)">
+                Delete
+              </button>
+            </span>
+          </div>
+        }
       </li>
     }
   </ul>
@@ -76,10 +117,72 @@
         @for (room of rooms(); track room.id) {
           <div class="card mb-3">
             <div class="card-body">
-              <h3 class="card-title h6">{{ room.name }}</h3>
+              @if (editingRoomId() === room.id) {
+                <form (ngSubmit)="saveRoom(room)" class="row g-2 align-items-end mb-3">
+                  <div class="col-auto">
+                    <label class="form-label" for="edit-room-name-{{ room.id }}">Room name</label>
+                    <input
+                      type="text"
+                      id="edit-room-name-{{ room.id }}"
+                      class="form-control"
+                      name="editRoomName"
+                      [(ngModel)]="editRoomName"
+                      required
+                    />
+                  </div>
+                  <div class="col-auto">
+                    <button type="submit" class="btn btn-primary">Save</button>
+                    <button type="button" class="btn btn-secondary ms-2" (click)="cancelEditRoom()">Cancel</button>
+                  </div>
+                </form>
+              } @else {
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                  <h3 class="card-title h6 mb-0">{{ room.name }}</h3>
+                  <span>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" (click)="startEditRoom(room)">
+                      Edit
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-danger ms-2" (click)="deleteRoom(room)">
+                      Delete
+                    </button>
+                  </span>
+                </div>
+              }
               <ul class="list-group mb-3">
                 @for (cot of cotsByRoom()[room.id]; track cot.id) {
-                  <li class="list-group-item">{{ cot.label }} - {{ cot.status }}</li>
+                  <li class="list-group-item">
+                    @if (editingCotId() === cot.id) {
+                      <form (ngSubmit)="saveCot(cot)" class="row g-2 align-items-end">
+                        <div class="col-auto">
+                          <label class="form-label" for="edit-cot-label-{{ cot.id }}">Cot label</label>
+                          <input
+                            type="text"
+                            id="edit-cot-label-{{ cot.id }}"
+                            class="form-control"
+                            name="editCotLabel"
+                            [(ngModel)]="editCotLabel"
+                            required
+                          />
+                        </div>
+                        <div class="col-auto">
+                          <button type="submit" class="btn btn-primary">Save</button>
+                          <button type="button" class="btn btn-secondary ms-2" (click)="cancelEditCot()">Cancel</button>
+                        </div>
+                      </form>
+                    } @else {
+                      <div class="d-flex justify-content-between align-items-center">
+                        <span>{{ cot.label }} - {{ cot.status }}</span>
+                        <span>
+                          <button type="button" class="btn btn-sm btn-outline-secondary" (click)="startEditCot(cot)">
+                            Edit
+                          </button>
+                          <button type="button" class="btn btn-sm btn-outline-danger ms-2" (click)="deleteCot(cot)">
+                            Delete
+                          </button>
+                        </span>
+                      </div>
+                    }
+                  </li>
                 }
               </ul>
               <form (ngSubmit)="createCot(room)" class="row g-2 align-items-end">

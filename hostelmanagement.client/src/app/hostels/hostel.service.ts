@@ -44,6 +44,14 @@ export class HostelService {
     return this.http.post<Hostel>('/api/hostels', { name, location });
   }
 
+  updateHostel(hostelId: string, name: string, location: string): Observable<Hostel> {
+    return this.http.put<Hostel>(`/api/hostels/${hostelId}`, { name, location });
+  }
+
+  deleteHostel(hostelId: string): Observable<void> {
+    return this.http.delete<void>(`/api/hostels/${hostelId}`);
+  }
+
   occupancy(hostelId: string): Observable<HostelOccupancy> {
     return this.http.get<HostelOccupancy>(`/api/hostels/${hostelId}/occupancy`);
   }
@@ -56,12 +64,28 @@ export class HostelService {
     return this.http.post<Room>(`/api/hostels/${hostelId}/rooms`, { name });
   }
 
+  updateRoom(hostelId: string, roomId: string, name: string): Observable<Room> {
+    return this.http.put<Room>(`/api/hostels/${hostelId}/rooms/${roomId}`, { name });
+  }
+
+  deleteRoom(hostelId: string, roomId: string): Observable<void> {
+    return this.http.delete<void>(`/api/hostels/${hostelId}/rooms/${roomId}`);
+  }
+
   listCots(roomId: string): Observable<Cot[]> {
     return this.http.get<Cot[]>(`/api/rooms/${roomId}/cots`);
   }
 
   createCot(roomId: string, label: string): Observable<Cot> {
     return this.http.post<Cot>(`/api/rooms/${roomId}/cots`, { label });
+  }
+
+  updateCot(roomId: string, cotId: string, label: string): Observable<Cot> {
+    return this.http.put<Cot>(`/api/rooms/${roomId}/cots/${cotId}`, { label });
+  }
+
+  deleteCot(roomId: string, cotId: string): Observable<void> {
+    return this.http.delete<void>(`/api/rooms/${roomId}/cots/${cotId}`);
   }
 
   revenue(hostelId: string, from: string, to: string): Observable<RevenueSummary> {

@@ -61,4 +61,46 @@ public class CotsController : ControllerBase
 
         return CreatedAtAction(nameof(List), new { roomId }, new CotResponse(cot.Id, cot.RoomId, cot.Label, cot.Status));
     }
+
+    [HttpPut("{id:guid}")]
+    public async Task<ActionResult<CotResponse>> Update(Guid roomId, Guid id, UpdateCotRequest request)
+    {
+        if (string.IsNullOrWhiteSpace(request.Label))
+        {
+            return BadRequest("Label is required.");
+        }
+
+        var cot = await _db.Cots.SingleOrDefaultAsync(c => c.Id == id && c.RoomId == roomId);
+        if (cot is null)
+        {
+            return NotFound();
+        }
+
+        // Label only - Status is driven by resident assignment and checkout, so
+        // it is deliberately not editable here.
+        cot.Label = request.Label;
+        await _db.SaveChangesAsync();
+
+        return Ok(new CotResponse(cot.Id, cot.RoomId, cot.Label, cot.Status));
+    }
+
+    [HttpDelete("{id:guid}")]
+    public async Task<IActionResult> Delete(Guid roomId, Guid id)
+    {
+        var cot = await _db.Cots.SingleOrDefaultAsync(c => c.Id == id && c.RoomId == roomId);
+        if (cot is null)
+        {
+            return NotFound();
+        }
+
+        if (cot.Status == CotStatus.Occupied)
+        {
+            return Conflict("A resident is assigned to this cot. Check them out first.");
+        }
+
+        _db.Cots.Remove(cot);
+        await _db.SaveChangesAsync();
+
+        return NoContent();
+    }
 }
