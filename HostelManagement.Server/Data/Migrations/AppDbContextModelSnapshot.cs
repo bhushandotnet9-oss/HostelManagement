@@ -185,7 +185,7 @@ namespace HostelManagement.Server.Data.Migrations
                     b.Property<decimal>("Amount")
                         .HasColumnType("TEXT");
 
-                    b.Property<Guid>("DuePeriodId")
+                    b.Property<Guid?>("DuePeriodId")
                         .HasColumnType("TEXT");
 
                     b.Property<Guid>("OwnerOrgId")
@@ -194,9 +194,17 @@ namespace HostelManagement.Server.Data.Migrations
                     b.Property<DateOnly>("PaidDate")
                         .HasColumnType("TEXT");
 
+                    b.Property<Guid>("ResidentId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("INTEGER");
+
                     b.HasKey("Id");
 
                     b.HasIndex("DuePeriodId");
+
+                    b.HasIndex("ResidentId");
 
                     b.ToTable("Payments");
                 });
@@ -334,11 +342,17 @@ namespace HostelManagement.Server.Data.Migrations
                 {
                     b.HasOne("HostelManagement.Server.Models.DuePeriod", "DuePeriod")
                         .WithMany("Payments")
-                        .HasForeignKey("DuePeriodId")
+                        .HasForeignKey("DuePeriodId");
+
+                    b.HasOne("HostelManagement.Server.Models.Resident", "Resident")
+                        .WithMany("Payments")
+                        .HasForeignKey("ResidentId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("DuePeriod");
+
+                    b.Navigation("Resident");
                 });
 
             modelBuilder.Entity("HostelManagement.Server.Models.Resident", b =>
@@ -384,6 +398,8 @@ namespace HostelManagement.Server.Data.Migrations
             modelBuilder.Entity("HostelManagement.Server.Models.Resident", b =>
                 {
                     b.Navigation("DuePeriods");
+
+                    b.Navigation("Payments");
                 });
 
             modelBuilder.Entity("HostelManagement.Server.Models.Room", b =>

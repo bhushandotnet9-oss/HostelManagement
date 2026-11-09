@@ -32,7 +32,7 @@ test('assigning a resident to a cot flips it to Occupied', async ({ page }) => {
 
   await residentRow.getByLabel('Cot').selectOption({ label: 'Sunrise Hostel / Room 101 / Cot A' });
   await residentRow.getByLabel('Rent amount').fill('5000');
-  await residentRow.getByLabel('Deposit amount').fill('10000');
+  await residentRow.getByLabel('Agreed deposit amount').fill('10000');
   await residentRow.getByLabel('Billing cycle').selectOption('Monthly');
   await residentRow.getByLabel('Move-in date').fill('2026-01-15');
   await residentRow.getByRole('button', { name: 'Assign cot' }).click();

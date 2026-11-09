@@ -141,7 +141,7 @@
                 />
               </div>
               <div class="col-auto">
-                <label class="form-label" for="edit-deposit-{{ resident.id }}">Deposit amount</label>
+                <label class="form-label" for="edit-deposit-{{ resident.id }}">Agreed deposit amount</label>
                 <input
                   type="number"
                   id="edit-deposit-{{ resident.id }}"
@@ -176,6 +176,41 @@
         }
         @if (resident.cotId) {
           <p class="mb-1">Rent: {{ resident.rentAmount }} | Billing: {{ resident.billingCycle }}</p>
+          <p class="mb-1">
+            Deposit agreed: {{ resident.depositAmount }} | collected: {{ resident.depositCollected }} |
+            <span [class.text-danger]="resident.depositOutstanding > 0">
+              outstanding: {{ resident.depositOutstanding }}
+            </span>
+          </p>
+          @if (resident.depositOutstanding > 0 && resident.status !== 'CheckedOut') {
+            <form (ngSubmit)="logDepositPayment(resident)" class="row g-2 align-items-end mb-2">
+              <div class="col-auto">
+                <label class="form-label" for="deposit-payment-amount-{{ resident.id }}">Deposit payment amount</label>
+                <input
+                  type="number"
+                  id="deposit-payment-amount-{{ resident.id }}"
+                  class="form-control form-control-sm"
+                  name="deposit-payment-amount-{{ resident.id }}"
+                  [(ngModel)]="depositPaymentAmount[resident.id]"
+                  required
+                />
+              </div>
+              <div class="col-auto">
+                <label class="form-label" for="deposit-payment-date-{{ resident.id }}">Deposit payment date</label>
+                <input
+                  type="date"
+                  id="deposit-payment-date-{{ resident.id }}"
+                  class="form-control form-control-sm"
+                  name="deposit-payment-date-{{ resident.id }}"
+                  [(ngModel)]="depositPaymentDate[resident.id]"
+                  required
+                />
+              </div>
+              <div class="col-auto">
+                <button type="submit" class="btn btn-primary btn-sm">Log deposit payment</button>
+              </div>
+            </form>
+          }
         }
         @if (resident.noticeDate) {
           <p class="mb-1">Notice: {{ resident.noticeDate }} ({{ resident.noticePeriodDays }} days)</p>
@@ -210,7 +245,7 @@
               />
             </div>
             <div class="col-auto">
-              <label class="form-label" for="deposit-{{ resident.id }}">Deposit amount</label>
+              <label class="form-label" for="deposit-{{ resident.id }}">Agreed deposit amount</label>
               <input
                 type="number"
                 id="deposit-{{ resident.id }}"

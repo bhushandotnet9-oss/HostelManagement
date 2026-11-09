@@ -166,8 +166,15 @@ public class HostelsController : ControllerBase
             expected += dueDatesInRange * resident.RentAmount;
         }
 
+        // Rent only: a deposit is not revenue. The old form reached the hostel
+        // through p.DuePeriod, which excluded deposits only as a side effect of
+        // their null due period - this says so outright and reaches the hostel
+        // through Payment.ResidentId, which every payment type carries.
         var collected = await _db.Payments
-            .Where(p => p.DuePeriod!.Resident!.HostelId == id && p.PaidDate >= from && p.PaidDate <= to)
+            .Where(p => p.Type == PaymentType.Rent
+                && p.Resident!.HostelId == id
+                && p.PaidDate >= from
+                && p.PaidDate <= to)
             .SumAsync(p => (decimal?)p.Amount) ?? 0;
 
         return Ok(new RevenueSummaryResponse(expected, collected));

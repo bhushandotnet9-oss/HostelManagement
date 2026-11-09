@@ -32,4 +32,9 @@ public class Resident : ITenantScoped
     public decimal? DepositRefundAmount { get; set; }
 
     public List<DuePeriod> DuePeriods { get; set; } = [];
+
+    // Both rent and deposit payments - Payment.Type discriminates. DepositAmount
+    // above is the agreed deposit; what was actually collected is the sum of the
+    // Deposit-typed payments here.
+    public List<Payment> Payments { get; set; } = [];
 }

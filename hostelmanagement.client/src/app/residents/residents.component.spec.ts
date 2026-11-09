@@ -21,6 +21,8 @@ const unassigned: Resident = {
   noticePeriodDays: null,
   checkoutDate: null,
   depositRefundAmount: null,
+  depositCollected: 0,
+  depositOutstanding: 0,
 };
 
 const assigned: Resident = {
@@ -30,6 +32,8 @@ const assigned: Resident = {
   rentAmount: 5000,
   depositAmount: 10000,
   billingCycle: 'Monthly',
+  depositCollected: 0,
+  depositOutstanding: 10000,
 };
 
 describe('ResidentsComponent edit and delete', () => {
@@ -172,5 +176,57 @@ describe('ResidentsComponent edit and delete', () => {
 
     expect(component.residents().length).toBe(1);
     expect(toast.toasts()[0].kind).toBe('success');
+  });
+
+  it('logs a deposit payment against the resident and refreshes the totals', () => {
+    component.depositPaymentAmount['res2'] = 4000;
+    component.depositPaymentDate['res2'] = '2026-01-20';
+
+    component.logDepositPayment(assigned);
+
+    const request = http.expectOne('/api/residents/res2/deposit-payments');
+    expect(request.request.method).toBe('POST');
+    expect(request.request.body).toEqual({ amount: 4000, date: '2026-01-20' });
+    request.flush({});
+
+    // Collected and outstanding are derived server-side, so the list is refetched.
+    http
+      .expectOne('/api/residents')
+      .flush([unassigned, { ...assigned, depositCollected: 4000, depositOutstanding: 6000 }]);
+
+    expect(component.residents()[1].depositCollected).toBe(4000);
+    expect(component.residents()[1].depositOutstanding).toBe(6000);
+    expect(component.depositPaymentAmount['res2']).toBe(0);
+    expect(component.depositPaymentDate['res2']).toBe('');
+    expect(toast.toasts()[0].kind).toBe('success');
+  });
+
+  it('shows the server message when a deposit payment over-collects', () => {
+    component.depositPaymentAmount['res2'] = 20000;
+    component.depositPaymentDate['res2'] = '2026-01-20';
+
+    component.logDepositPayment(assigned);
+
+    http
+      .expectOne('/api/residents/res2/deposit-payments')
+      .flush('That exceeds the agreed deposit; only 10000 remains outstanding.', {
+        status: 409,
+        statusText: 'Conflict',
+      });
+
+    const entry = toast.toasts()[0];
+    expect(entry.kind).toBe('error');
+    expect(entry.message).toBe('That exceeds the agreed deposit; only 10000 remains outstanding.');
+    // The entered values stay put so the owner can correct the amount.
+    expect(component.depositPaymentAmount['res2']).toBe(20000);
+  });
+
+  it('issues no request for an incomplete deposit payment form', () => {
+    component.depositPaymentAmount['res2'] = 4000;
+    component.depositPaymentDate['res2'] = '';
+
+    component.logDepositPayment(assigned);
+
+    http.expectNone('/api/residents/res2/deposit-payments');
   });
 });

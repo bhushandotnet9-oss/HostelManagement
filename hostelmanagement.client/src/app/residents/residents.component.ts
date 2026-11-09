@@ -51,6 +51,9 @@ export class ResidentsComponent implements OnInit {
   paymentAmount: Record<string, number> = {};
   paymentDate: Record<string, string> = {};
 
+  depositPaymentAmount: Record<string, number> = {};
+  depositPaymentDate: Record<string, string> = {};
+
   constructor(
     private readonly residentService: ResidentService,
     private readonly hostelService: HostelService,
@@ -253,6 +256,25 @@ export class ResidentsComponent implements OnInit {
         this.toast.success('Payment logged successfully.');
       },
       error: () => this.toast.error('Failed to log payment.'),
+    });
+  }
+
+  logDepositPayment(resident: Resident): void {
+    const amount = this.depositPaymentAmount[resident.id];
+    const date = this.depositPaymentDate[resident.id];
+    if (!amount || !date) {
+      return;
+    }
+    this.residentService.logDepositPayment(resident.id, amount, date).subscribe({
+      next: () => {
+        this.depositPaymentAmount[resident.id] = 0;
+        this.depositPaymentDate[resident.id] = '';
+        // Collected and outstanding are derived server-side, so the list has to
+        // be refetched rather than adjusted locally.
+        this.reloadResidents();
+        this.toast.success('Deposit payment logged successfully.');
+      },
+      error: (error) => this.toast.error(apiErrorMessage(error, 'Failed to log deposit payment.')),
     });
   }
 }

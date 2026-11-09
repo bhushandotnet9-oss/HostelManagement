@@ -51,6 +51,8 @@ public class DuesController : ControllerBase
         _db.Payments.Add(new Payment
         {
             Id = Guid.NewGuid(),
+            Type = PaymentType.Rent,
+            ResidentId = duePeriod.ResidentId,
             DuePeriodId = duePeriod.Id,
             Amount = request.Amount,
             PaidDate = request.Date,

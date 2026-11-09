@@ -14,12 +14,24 @@ export interface Resident {
   status: ResidentStatus;
   cotId: string | null;
   rentAmount: number;
+  /** The *agreed* deposit, not a record of money received - see depositCollected. */
   depositAmount: number;
   billingCycle: BillingCycle | null;
   noticeDate: string | null;
   noticePeriodDays: number | null;
   checkoutDate: string | null;
   depositRefundAmount: number | null;
+  /** Total of the resident's deposit payments. */
+  depositCollected: number;
+  /** depositAmount minus depositCollected, never below zero. */
+  depositOutstanding: number;
+}
+
+export interface DepositPayment {
+  id: string;
+  residentId: string;
+  amount: number;
+  paidDate: string;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -84,5 +96,17 @@ export class ResidentService {
 
   checkout(residentId: string, depositRefundAmount: number): Observable<Resident> {
     return this.http.post<Resident>(`/api/residents/${residentId}/checkout`, { depositRefundAmount });
+  }
+
+  /**
+   * Deposit payments hang off the resident, not a due period: the deposit is
+   * owed from move-in rather than on the billing schedule.
+   */
+  logDepositPayment(residentId: string, amount: number, date: string): Observable<DepositPayment> {
+    return this.http.post<DepositPayment>(`/api/residents/${residentId}/deposit-payments`, { amount, date });
+  }
+
+  listDepositPayments(residentId: string): Observable<DepositPayment[]> {
+    return this.http.get<DepositPayment[]>(`/api/residents/${residentId}/deposit-payments`);
   }
 }

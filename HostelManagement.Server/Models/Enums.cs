@@ -21,6 +21,15 @@ public enum ResidentStatus
     CheckedOut
 }
 
+// Rent is deliberately 0 so existing payment rows, which are all rent, fall on
+// it when the column is added with a zero default - see the backfill in
+// Data/Migrations/..._AddPaymentTypeAndDepositPayments.cs.
+public enum PaymentType
+{
+    Rent,
+    Deposit
+}
+
 public enum ExpenseCategory
 {
     Electricity,

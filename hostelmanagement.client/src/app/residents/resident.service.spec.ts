@@ -59,4 +59,21 @@ describe('ResidentService update and delete', () => {
     expect(request.request.method).toBe('DELETE');
     request.flush(null);
   });
+
+  it('POSTs a deposit payment to the resident, not a due period', () => {
+    service.logDepositPayment('res1', 4000, '2026-01-20').subscribe();
+
+    const request = http.expectOne('/api/residents/res1/deposit-payments');
+    expect(request.request.method).toBe('POST');
+    expect(request.request.body).toEqual({ amount: 4000, date: '2026-01-20' });
+    request.flush({});
+  });
+
+  it('GETs a resident deposit payments', () => {
+    service.listDepositPayments('res1').subscribe();
+
+    const request = http.expectOne('/api/residents/res1/deposit-payments');
+    expect(request.request.method).toBe('GET');
+    request.flush([]);
+  });
 });

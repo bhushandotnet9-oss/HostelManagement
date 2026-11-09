@@ -370,6 +370,164 @@ public class ResidentManagementTests : IAsyncLifetime
         Assert.Equal(CotStatus.Occupied, cots!.Single(c => c.Id == cotId).Status);
     }
 
+    [Fact]
+    public async Task Resident_with_no_deposit_payments_reports_the_full_agreed_deposit_outstanding()
+    {
+        var client = await AuthenticatedClientAsync("deposittotals1@example.com");
+        var resident = await CreateAssignedResidentAsync(client, depositAmount: 10000m);
+
+        var fetched = await client.GetFromJsonAsync<ResidentResponse>(
+            $"/api/residents/{resident.Id}", TestJson.Options);
+
+        Assert.Equal(10000m, fetched!.DepositAmount);
+        Assert.Equal(0m, fetched.DepositCollected);
+        Assert.Equal(10000m, fetched.DepositOutstanding);
+    }
+
+    [Fact]
+    public async Task Part_paid_deposit_reports_collected_and_outstanding()
+    {
+        var client = await AuthenticatedClientAsync("deposittotals2@example.com");
+        var resident = await CreateAssignedResidentAsync(client, depositAmount: 10000m);
+
+        await client.PostAsJsonAsync($"/api/residents/{resident.Id}/deposit-payments",
+            new LogDepositPaymentRequest(4000m, new DateOnly(2026, 1, 20)));
+
+        var fetched = await client.GetFromJsonAsync<ResidentResponse>(
+            $"/api/residents/{resident.Id}", TestJson.Options);
+
+        Assert.Equal(4000m, fetched!.DepositCollected);
+        Assert.Equal(6000m, fetched.DepositOutstanding);
+    }
+
+    [Fact]
+    public async Task Fully_paid_deposit_reports_nothing_outstanding()
+    {
+        var client = await AuthenticatedClientAsync("deposittotals3@example.com");
+        var resident = await CreateAssignedResidentAsync(client, depositAmount: 10000m);
+
+        await client.PostAsJsonAsync($"/api/residents/{resident.Id}/deposit-payments",
+            new LogDepositPaymentRequest(10000m, new DateOnly(2026, 1, 20)));
+
+        var fetched = await client.GetFromJsonAsync<ResidentResponse>(
+            $"/api/residents/{resident.Id}", TestJson.Options);
+
+        Assert.Equal(10000m, fetched!.DepositCollected);
+        Assert.Equal(0m, fetched.DepositOutstanding);
+    }
+
+    [Fact]
+    public async Task Lowering_the_agreed_deposit_below_what_was_collected_floors_outstanding_at_zero()
+    {
+        var client = await AuthenticatedClientAsync("deposittotals4@example.com");
+        var resident = await CreateAssignedResidentAsync(client, depositAmount: 10000m);
+
+        await client.PostAsJsonAsync($"/api/residents/{resident.Id}/deposit-payments",
+            new LogDepositPaymentRequest(8000m, new DateOnly(2026, 1, 20)));
+
+        await client.PutAsJsonAsync($"/api/residents/{resident.Id}", new UpdateResidentRequest(
+            "Ravi Kumar", "9999999999", "123412341234", new DateOnly(2026, 1, 15),
+            RentAmount: 5000m, DepositAmount: 5000m, BillingCycle: BillingCycle.Monthly), TestJson.Options);
+
+        var fetched = await client.GetFromJsonAsync<ResidentResponse>(
+            $"/api/residents/{resident.Id}", TestJson.Options);
+
+        // Collected still reports the full 8000 that was taken; outstanding
+        // cannot go negative, so it reads as nothing left to collect.
+        Assert.Equal(8000m, fetched!.DepositCollected);
+        Assert.Equal(0m, fetched.DepositOutstanding);
+    }
+
+    [Fact]
+    public async Task Listing_residents_reports_each_residents_own_deposit_totals()
+    {
+        var client = await AuthenticatedClientAsync("deposittotals5@example.com");
+
+        var paidInFull = await CreateAssignedResidentAsync(client, depositAmount: 10000m);
+        var partPaid = await CreateAssignedResidentAsync(client, depositAmount: 8000m);
+        var unpaid = await CreateAssignedResidentAsync(client, depositAmount: 6000m);
+
+        await client.PostAsJsonAsync($"/api/residents/{paidInFull.Id}/deposit-payments",
+            new LogDepositPaymentRequest(10000m, new DateOnly(2026, 1, 20)));
+        await client.PostAsJsonAsync($"/api/residents/{partPaid.Id}/deposit-payments",
+            new LogDepositPaymentRequest(3000m, new DateOnly(2026, 1, 20)));
+
+        var residents = await client.GetFromJsonAsync<List<ResidentResponse>>("/api/residents", TestJson.Options);
+
+        var paidInFullRow = residents!.Single(r => r.Id == paidInFull.Id);
+        Assert.Equal(10000m, paidInFullRow.DepositCollected);
+        Assert.Equal(0m, paidInFullRow.DepositOutstanding);
+
+        var partPaidRow = residents.Single(r => r.Id == partPaid.Id);
+        Assert.Equal(3000m, partPaidRow.DepositCollected);
+        Assert.Equal(5000m, partPaidRow.DepositOutstanding);
+
+        var unpaidRow = residents.Single(r => r.Id == unpaid.Id);
+        Assert.Equal(0m, unpaidRow.DepositCollected);
+        Assert.Equal(6000m, unpaidRow.DepositOutstanding);
+    }
+
+    [Fact]
+    public async Task Resident_with_only_a_deposit_payment_cannot_be_deleted()
+    {
+        var client = await AuthenticatedClientAsync("depositdelete1@example.com");
+        var resident = await CreateAssignedResidentAsync(client, depositAmount: 10000m);
+
+        // Deposit only - no rent payment, and dues are never read, so nothing
+        // reaches this resident through a due period.
+        await client.PostAsJsonAsync($"/api/residents/{resident.Id}/deposit-payments",
+            new LogDepositPaymentRequest(10000m, new DateOnly(2026, 1, 20)));
+
+        var response = await client.DeleteAsync($"/api/residents/{resident.Id}");
+
+        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+        Assert.Contains("recorded payments", await response.Content.ReadAsStringAsync());
+
+        var residents = await client.GetFromJsonAsync<List<ResidentResponse>>("/api/residents", TestJson.Options);
+        Assert.Contains(residents!, r => r.Id == resident.Id);
+    }
+
+    [Fact]
+    public async Task Resident_with_no_payments_of_either_type_is_still_deletable()
+    {
+        var client = await AuthenticatedClientAsync("depositdelete2@example.com");
+        var cotId = await CreateCotAsync(client);
+        var resident = await CreateResidentAsync(client);
+        await client.PostAsJsonAsync($"/api/residents/{resident.Id}/assign-cot",
+            new AssignCotRequest(cotId, 5000m, 10000m, BillingCycle.Monthly, new DateOnly(2026, 1, 15)),
+            TestJson.Options);
+
+        // Reading dues materializes due periods; they must not block the delete.
+        var dues = await client.GetFromJsonAsync<List<DuePeriodResponse>>(
+            $"/api/residents/{resident.Id}/dues", TestJson.Options);
+        Assert.NotEmpty(dues!);
+
+        var response = await client.DeleteAsync($"/api/residents/{resident.Id}");
+
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+
+        var residents = await client.GetFromJsonAsync<List<ResidentResponse>>("/api/residents", TestJson.Options);
+        Assert.DoesNotContain(residents!, r => r.Id == resident.Id);
+
+        var roomId = await GetRoomIdForCot(client, cotId);
+        var cots = await client.GetFromJsonAsync<List<CotResponse>>($"/api/rooms/{roomId}/cots", TestJson.Options);
+        Assert.Equal(CotStatus.Vacant, cots!.Single(c => c.Id == cotId).Status);
+    }
+
+    /// <summary>
+    /// Creates a resident on their own fresh cot with the given agreed deposit.
+    /// Each call builds its own hostel/room/cot, so several residents can coexist.
+    /// </summary>
+    private static async Task<ResidentResponse> CreateAssignedResidentAsync(HttpClient client, decimal depositAmount)
+    {
+        var cotId = await CreateCotAsync(client);
+        var resident = await CreateResidentAsync(client);
+        await client.PostAsJsonAsync($"/api/residents/{resident.Id}/assign-cot",
+            new AssignCotRequest(cotId, 5000m, depositAmount, BillingCycle.Monthly, new DateOnly(2026, 1, 15)),
+            TestJson.Options);
+        return resident;
+    }
+
     private static async Task<ResidentResponse> CreateResidentAsync(HttpClient client)
     {
         var response = await client.PostAsJsonAsync("/api/residents",

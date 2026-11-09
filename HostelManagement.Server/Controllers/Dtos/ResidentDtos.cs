@@ -25,6 +25,10 @@ public record RecordNoticeRequest(DateOnly NoticeDate, int NoticePeriodDays);
 
 public record CheckoutRequest(decimal DepositRefundAmount);
 
+public record LogDepositPaymentRequest(decimal Amount, DateOnly Date);
+
+public record DepositPaymentResponse(Guid Id, Guid ResidentId, decimal Amount, DateOnly PaidDate);
+
 public record ResidentResponse(
     Guid Id,
     string Name,
@@ -39,4 +43,8 @@ public record ResidentResponse(
     DateOnly? NoticeDate,
     int? NoticePeriodDays,
     DateOnly? CheckoutDate,
-    decimal? DepositRefundAmount);
+    decimal? DepositRefundAmount,
+    /// <summary>Total of this resident's Deposit payments. Derived on read, never stored.</summary>
+    decimal DepositCollected,
+    /// <summary>DepositAmount (the agreed deposit) minus DepositCollected, floored at zero.</summary>
+    decimal DepositOutstanding);

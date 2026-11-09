@@ -23,7 +23,18 @@ public class ResidentsController : ControllerBase
     public async Task<ActionResult<List<ResidentResponse>>> List()
     {
         var residents = await _db.Residents.ToListAsync();
-        return Ok(residents.Select(ToResponse).ToList());
+
+        // One grouped query for every resident's deposit total, not one per
+        // resident - this endpoint returns the whole org's residents.
+        var depositTotals = await _db.Payments
+            .Where(p => p.Type == PaymentType.Deposit)
+            .GroupBy(p => p.ResidentId)
+            .Select(g => new { ResidentId = g.Key, Collected = g.Sum(p => p.Amount) })
+            .ToDictionaryAsync(x => x.ResidentId, x => x.Collected);
+
+        return Ok(residents
+            .Select(r => ToResponse(r, depositTotals.GetValueOrDefault(r.Id)))
+            .ToList());
     }
 
     [HttpGet("{id:guid}")]
@@ -35,7 +46,7 @@ public class ResidentsController : ControllerBase
             return NotFound();
         }
 
-        return Ok(ToResponse(resident));
+        return Ok(ToResponse(resident, await DepositCollectedAsync(resident.Id)));
     }
 
     [HttpPost]
@@ -69,7 +80,9 @@ public class ResidentsController : ControllerBase
         _db.Residents.Add(resident);
         await _db.SaveChangesAsync();
 
-        return CreatedAtAction(nameof(Get), new { id = resident.Id }, ToResponse(resident));
+        // A resident created a moment ago cannot have a payment, so there is
+        // nothing to sum.
+        return CreatedAtAction(nameof(Get), new { id = resident.Id }, ToResponse(resident, 0m));
     }
 
     [HttpPut("{id:guid}")]
@@ -139,7 +152,7 @@ public class ResidentsController : ControllerBase
 
         await _db.SaveChangesAsync();
 
-        return Ok(ToResponse(resident));
+        return Ok(ToResponse(resident, await DepositCollectedAsync(resident.Id)));
     }
 
     [HttpDelete("{id:guid}")]
@@ -154,7 +167,12 @@ public class ResidentsController : ControllerBase
         // Payments are money that changed hands, so they block the delete. Due
         // periods do not: they are derived from the resident's terms and would
         // make a resident undeletable the moment anyone opened their dues.
-        if (await _db.Payments.AnyAsync(p => p.DuePeriod!.ResidentId == id))
+        //
+        // Matched on Payment.ResidentId, not through DuePeriod: a deposit payment
+        // has no due period, so the old `p.DuePeriod!.ResidentId == id` form would
+        // quietly stop seeing it and let a resident with a collected deposit be
+        // deleted.
+        if (await _db.Payments.AnyAsync(p => p.ResidentId == id))
         {
             return Conflict("This resident has recorded payments and cannot be deleted.");
         }
@@ -209,7 +227,7 @@ public class ResidentsController : ControllerBase
 
         await _db.SaveChangesAsync();
 
-        return Ok(ToResponse(resident));
+        return Ok(ToResponse(resident, await DepositCollectedAsync(resident.Id)));
     }
 
     [HttpPost("{id:guid}/notice")]
@@ -227,7 +245,77 @@ public class ResidentsController : ControllerBase
 
         await _db.SaveChangesAsync();
 
-        return Ok(ToResponse(resident));
+        return Ok(ToResponse(resident, await DepositCollectedAsync(resident.Id)));
+    }
+
+    [HttpGet("{id:guid}/deposit-payments")]
+    public async Task<ActionResult<List<DepositPaymentResponse>>> ListDepositPayments(Guid id)
+    {
+        var resident = await _db.Residents.SingleOrDefaultAsync(r => r.Id == id);
+        if (resident is null)
+        {
+            return NotFound();
+        }
+
+        var payments = await DepositPaymentsQuery(id)
+            .OrderBy(p => p.PaidDate)
+            .ToListAsync();
+
+        return Ok(payments
+            .Select(p => new DepositPaymentResponse(p.Id, p.ResidentId, p.Amount, p.PaidDate))
+            .ToList());
+    }
+
+    [HttpPost("{id:guid}/deposit-payments")]
+    public async Task<ActionResult<DepositPaymentResponse>> LogDepositPayment(Guid id, LogDepositPaymentRequest request)
+    {
+        var resident = await _db.Residents.SingleOrDefaultAsync(r => r.Id == id);
+        if (resident is null)
+        {
+            return NotFound();
+        }
+
+        if (request.Amount <= 0)
+        {
+            return BadRequest("Amount must be greater than zero.");
+        }
+
+        // Written against DepositAmount rather than CotId so it stays correct if
+        // terms ever become settable before assignment. Today the two coincide:
+        // Update refuses terms for a resident with no cot, so an unassigned
+        // resident's agreed deposit is always zero.
+        if (resident.DepositAmount <= 0)
+        {
+            return Conflict("No deposit is agreed for this resident, so a deposit payment cannot be recorded.");
+        }
+
+        // Read-then-write: two concurrent requests could in principle both pass
+        // this check. Single-owner data entry has no such path, and the worst
+        // case is an over-collected deposit the owner can see rather than
+        // corrupted data - see design.md.
+        var collected = await DepositPaymentsQuery(id).SumAsync(p => p.Amount);
+        if (collected + request.Amount > resident.DepositAmount)
+        {
+            var outstanding = resident.DepositAmount - collected;
+            return Conflict($"That exceeds the agreed deposit; only {outstanding} remains outstanding.");
+        }
+
+        var payment = new Payment
+        {
+            Id = Guid.NewGuid(),
+            Type = PaymentType.Deposit,
+            ResidentId = resident.Id,
+            // No due period: the deposit is owed from move-in, not on the
+            // billing schedule, and may be taken before the first period exists.
+            DuePeriodId = null,
+            Amount = request.Amount,
+            PaidDate = request.Date,
+        };
+
+        _db.Payments.Add(payment);
+        await _db.SaveChangesAsync();
+
+        return Ok(new DepositPaymentResponse(payment.Id, payment.ResidentId, payment.Amount, payment.PaidDate));
     }
 
     [HttpPost("{id:guid}/checkout")]
@@ -260,10 +348,18 @@ public class ResidentsController : ControllerBase
 
         await _db.SaveChangesAsync();
 
-        return Ok(ToResponse(resident));
+        return Ok(ToResponse(resident, await DepositCollectedAsync(resident.Id)));
     }
 
-    private static ResidentResponse ToResponse(Resident resident) => new(
+    // The tenant query filter on Payments already scopes this to the current
+    // org, so a resident id from another org yields no rows even if guessed.
+    private IQueryable<Payment> DepositPaymentsQuery(Guid residentId) =>
+        _db.Payments.Where(p => p.ResidentId == residentId && p.Type == PaymentType.Deposit);
+
+    private Task<decimal> DepositCollectedAsync(Guid residentId) =>
+        DepositPaymentsQuery(residentId).SumAsync(p => p.Amount);
+
+    private static ResidentResponse ToResponse(Resident resident, decimal depositCollected) => new(
         resident.Id,
         resident.Name,
         resident.ContactNumber,
@@ -277,5 +373,9 @@ public class ResidentsController : ControllerBase
         resident.NoticeDate,
         resident.NoticePeriodDays,
         resident.CheckoutDate,
-        resident.DepositRefundAmount);
+        resident.DepositRefundAmount,
+        depositCollected,
+        // Floored because Update can lower the agreed deposit below what was
+        // already collected; "outstanding" must keep meaning "still to collect".
+        Math.Max(0m, resident.DepositAmount - depositCollected));
 }

@@ -27,7 +27,7 @@ async function createOverdueResident(page: Page, hostelName: string, roomName: s
   const residentRow = page.locator('li.resident', { hasText: residentName });
   await residentRow.getByLabel('Cot').selectOption({ label: `${hostelName} / ${roomName} / ${cotLabel}` });
   await residentRow.getByLabel('Rent amount').fill('5000');
-  await residentRow.getByLabel('Deposit amount').fill('10000');
+  await residentRow.getByLabel('Agreed deposit amount').fill('10000');
   await residentRow.getByLabel('Billing cycle').selectOption('Monthly');
   await residentRow.getByLabel('Move-in date').fill('2026-01-15');
   await residentRow.getByRole('button', { name: 'Assign cot' }).click();
